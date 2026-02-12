@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    :root{--muted:#64748b;--accent:#0891b2;--accent-dark:#0e7490;--bg:#f8fafc;--card:#ffffff;--red:#ef4444}
+    :root{--muted:#64748b;--accent:#0891b2;--accent-dark:#0e7490;--bg:#f8fafc;--card:#ffffff;--red:#ef4444;--orange:#f59e0b}
     *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,sans-serif}
     body{margin:0;background:var(--bg);color:#0f172a;padding:12px;padding-bottom:80px}
     .app{max-width:600px;margin:0 auto}
@@ -864,7 +864,7 @@ function renderHistory() {
       <th>Meja</th> <!-- Tambah kolom meja -->
       <th>Detail</th>
       <th style="text-align:right">Total</th>
-      <th style="text-align:center;width:40px">Aksi</th>
+      <th style="text-align:center;width:60px">Aksi</th>
     </tr>`;
   
   transactions.slice(0, 20).forEach(t => {
@@ -877,8 +877,9 @@ function renderHistory() {
         <td>${mejaInfo}</td>
         <td>${itemsStr}</td>
         <td style="text-align:right;font-weight:600">${formatRp(t.total)}</td>
-        <td style="text-align:center">
-          <button onclick="deleteTransaction(${t.id})" style="color:red;font-weight:bold;border:none;background:none;cursor:pointer;padding:4px">×</button>
+        <td style="text-align:center; white-space:nowrap">
+          <button onclick="editTransaction(${t.id})" style="color:var(--orange);font-weight:bold;border:none;background:none;cursor:pointer;padding:4px;margin-right:4px" title="Edit">✎</button>
+          <button onclick="deleteTransaction(${t.id})" style="color:red;font-weight:bold;border:none;background:none;cursor:pointer;padding:4px" title="Hapus">×</button>
         </td>
       </tr>
     `;
@@ -888,6 +889,43 @@ function renderHistory() {
   if (transactions.length === 0) {
     table.innerHTML += '<tr><td colspan="5" style="text-align:center;padding:10px;color:#cbd5e1">Belum ada riwayat</td></tr>';
   }
+}
+
+function editTransaction(id) {
+  // Cek apakah keranjang saat ini ada isinya
+  if (cart.length > 0) {
+    if (!confirm('Keranjang saat ini tidak kosong. Mengedit transaksi lama akan menimpa keranjang saat ini. Lanjutkan?')) return;
+  }
+  
+  const trxIndex = transactions.findIndex(t => t.id === id);
+  if (trxIndex === -1) return;
+  
+  const trx = transactions[trxIndex];
+  
+  // Konfirmasi ke pengguna
+  if(!confirm('Edit transaksi ini? Item akan kembali ke keranjang dan transaksi akan dihapus dari riwayat.')) return;
+  
+  // 1. Kembalikan item ke keranjang
+  cart = [...trx.items];
+  
+  // 2. Kembalikan nomor meja jika ada
+  if (trx.tableNum && trx.tableNum !== '-') {
+      document.getElementById('tableNum').value = trx.tableNum;
+  } else {
+      document.getElementById('tableNum').value = '';
+  }
+
+  // 3. Hapus transaksi dari riwayat (karena akan disimpan ulang nanti setelah diedit)
+  transactions.splice(trxIndex, 1);
+  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+  
+  // 4. Update UI
+  renderCart();
+  updateStats();
+  renderHistory();
+  
+  // 5. Scroll otomatis ke atas (keranjang)
+  document.querySelector('.cart-wrapper').scrollIntoView({behavior: 'smooth'});
 }
 
 function deleteTransaction(id) {

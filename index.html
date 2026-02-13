@@ -260,7 +260,8 @@
           <span class="code-tag">A</span> = Sate Ayam &bull; 
           <span class="code-tag">K</span> = Sate Kambing<br>
           <span class="code-tag">KT</span> = Kambing Tanpa Lemak &bull; 
-          <span class="code-tag">G</span> = Gule<br>
+          <span class="code-tag">G</span> = Gule &bull; 
+          <span class="code-tag">N</span> = Nasi<br>
           <span class="code-tag">rb</span> = 000 (Contoh: 15rb = 15.000)
         </div>
         <button class="btn" style="margin-top:12px;padding:12px; font-size: 14px;" onclick="parseAI()">Masukan ke Keranjang</button>
@@ -354,12 +355,14 @@
       <span id="changeDisplay">Rp 0</span>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px; margin-bottom:12px">
-      <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="printReceipt()">🖨️ Print Struk</button>
-      <button class="btn" style="background: var(--green); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="processTransaction()">✅ Selesai</button>
+    <!-- UPDATE: Ganti Layout Tombol Print -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-bottom:12px">
+      <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="printReceipt()">🖨️ Web/PDF</button>
+      <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="printBluetooth()">🔵 Bluetooth</button>
     </div>
+    <button class="btn" style="background: var(--green); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="processTransaction()">✅ Selesai</button>
     
-    <button class="btn secondary" style="width:100%; margin-top: 0;" onclick="closeModal('paymentModal')">Batal</button>
+    <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('paymentModal')">Batal</button>
   </div>
 </div>
 
@@ -406,7 +409,7 @@ const DATA_MENU = [
   
   // MAKANAN LAIN
   { id: 'nasi_gule', keywords: ['nasi gule', 'nasi gulai'], label: 'Nasi Gule', price: 14000, category: 'food', visible: true },
-  { id: 'nasi', keywords: ['nasi', 'sego'], label: 'Nasi Putih', price: 3000, category: 'food', visible: true },
+  { id: 'nasi', keywords: ['nasi', 'sego'], label: 'Nasi Putih', price: 3000, category: 'food', visible: true, isFlexible: true },
   { id: 'kerupuk', keywords: ['kerupuk', 'rupuk'], label: 'Kerupuk', price: 1000, category: 'food', visible: true },
 
   // MINUMAN
@@ -574,6 +577,7 @@ function parseAI() {
   text = text.replace(/\bk\b/g, 'sate kambing');
   text = text.replace(/\bkt\b/g, 'kambing tanpa lemak');
   text = text.replace(/\bg\b/g, 'gule');
+  text = text.replace(/\bn\b/g, 'nasi'); // Penambahan Kode N = Nasi
 
   if (!text.trim()) return;
 
@@ -749,6 +753,71 @@ function printReceipt() {
   window.print();
 }
 
+/* ================= PRINT BLUETOOTH (RawBT) ================= */
+function printBluetooth() {
+  const tableNum = document.getElementById('tableNum').value || '-';
+  const paid = parseInt(document.getElementById('paidInput').value) || 0;
+  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+  const change = paid - total;
+  const dateNow = new Date().toLocaleString('id-ID');
+
+  // Helper: Text Centering (Asumsi lebar 32 karakter untuk printer 58mm)
+  const WIDTH = 32;
+  const center = (txt) => {
+    const space = Math.max(0, Math.floor((WIDTH - txt.length) / 2));
+    return ' '.repeat(space) + txt;
+  };
+  
+  // Helper: Format Baris (Label ....... Harga)
+  const row = (label, priceVal) => {
+    const pStr = formatRp(priceVal);
+    // Potong label jika terlalu panjang agar harga tetap muat
+    const maxLabel = WIDTH - pStr.length - 1; 
+    let lStr = label.substring(0, maxLabel);
+    const space = Math.max(0, WIDTH - lStr.length - pStr.length);
+    return lStr + ' '.repeat(space) + pStr;
+  };
+
+  let txt = "";
+  // Header
+  txt += center("WARUNG CAKSABAR") + "\n";
+  txt += center("Jl. Brigjen Katamso") + "\n";
+  txt += center("No.88-81") + "\n";
+  txt += "-".repeat(WIDTH) + "\n";
+  txt += `Tgl : ${dateNow}\n`;
+  txt += `Meja: ${tableNum}\n`;
+  txt += "-".repeat(WIDTH) + "\n";
+
+  // Items
+  cart.forEach(item => {
+    // Baris 1: Nama Menu
+    txt += `${item.label}\n`;
+    
+    // Baris 2: Qty x HargaSatuan .... Total
+    const qtyPrice = `   ${item.qty} x ${formatRp(item.price)}`;
+    const lineTotal = formatRp(item.qty * item.price);
+    
+    const space = Math.max(0, WIDTH - qtyPrice.length - lineTotal.length);
+    txt += qtyPrice + ' '.repeat(space) + lineTotal + "\n";
+  });
+
+  txt += "-".repeat(WIDTH) + "\n";
+  
+  // Totals
+  txt += row("TOTAL", total) + "\n";
+  txt += row("BAYAR", paid) + "\n";
+  txt += row("KEMBALI", (change < 0 ? 0 : change)) + "\n";
+  
+  txt += "-".repeat(WIDTH) + "\n";
+  txt += center("Terima Kasih") + "\n";
+  txt += "\n\n"; // Feed kertas
+
+  // Kirim ke RawBT via Intent
+  // Format ini dikenali oleh aplikasi RawBT Driver di Android
+  const base64 = btoa(txt);
+  window.location.href = 'rawbt:base64,' + base64;
+}
+
 /* ================= REPORT PAGE ================= */
 function showReport() {
   const salesStats = {}; 
@@ -763,6 +832,7 @@ function showReport() {
         const isCustom = menuRef ? (menuRef.price !== item.price) : false;
 
         salesStats[key] = {
+          id: item.id, // Menyimpan ID agar bisa dicek jenis satenya
           label: item.label,
           price: item.price,
           qty: 0,
@@ -789,13 +859,25 @@ function showReport() {
       priceDisplay = `<span style="color:#ef4444;font-size:12px;background:#fee2e2;padding:2px 8px;border-radius:6px;font-weight:600">Khusus: ${formatRp(item.price)}</span>`;
     }
 
+    // LOGIKA PERHITUNGAN TUSUK
+    let qtyDisplay = item.qty;
+    
+    // Cek ID item apakah termasuk Sate Porsi (Porsi x 10)
+    if (['sk_porsi', 'sk_nl_porsi', 'sa_porsi'].includes(item.id)) {
+        qtyDisplay = `${item.qty} Porsi <span style="font-weight:800;color:var(--accent);font-size:12px;display:block">(${item.qty * 10} Tusuk)</span>`;
+    } 
+    // Cek ID item apakah termasuk Sate Tusuk (Eceran)
+    else if (['sk_tusuk', 'sk_nl_tusuk', 'sa_tusuk'].includes(item.id)) {
+        qtyDisplay = `${item.qty} Tusuk`;
+    }
+
     return `
       <tr class="report-row">
         <td>
           <div style="font-weight:600;color:#0f172a; margin-bottom:2px;">${item.label}</div>
           <div>${priceDisplay}</div>
         </td>
-        <td style="text-align:right;vertical-align:middle" class="report-qty">${item.qty}</td>
+        <td style="text-align:right;vertical-align:middle" class="report-qty">${qtyDisplay}</td>
       </tr>`;
   };
 
@@ -821,7 +903,7 @@ function showReport() {
     container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:60px 20px;">Belum ada data penjualan.<br>Lakukan transaksi terlebih dahulu.</div>';
   } else {
     let html = '<table style="width:100%">';
-    html += '<tr style="background:#f8fafc"><th style="padding:14px 16px; border-bottom:2px solid #e2e8f0;">Menu Item</th><th style="text-align:right;padding:14px 16px; border-bottom:2px solid #e2e8f0;">Qty</th></tr>';
+    html += '<tr style="background:#f8fafc"><th style="padding:14px 16px; border-bottom:2px solid #e2e8f0;">Menu Item</th><th style="text-align:right;padding:14px 16px; border-bottom:2px solid #e2e8f0;">Qty / Tusuk</th></tr>';
     html += foodHtml;
     html += drinkHtml;
     html += '</table>';
@@ -829,11 +911,11 @@ function showReport() {
     html += `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px; padding: 0 20px 20px;">
         <div style="background:#ecfeff;padding:20px;border-radius:12px;text-align:center;border:1px solid #cffafe">
-           <div style="font-size:13px;color:#0e7490;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Makanan</div>
+           <div style="font-size:13px;color:#0e7490;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Transaksi Makanan</div>
            <div style="font-weight:800;font-size:28px;color:#0891b2">${totalFood}</div>
         </div>
         <div style="background:#fff7ed;padding:20px;border-radius:12px;text-align:center;border:1px solid #ffedd5">
-           <div style="font-size:13px;color:#c2410c;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Minuman</div>
+           <div style="font-size:13px;color:#c2410c;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Transaksi Minuman</div>
            <div style="font-weight:800;font-size:28px;color:#ea580c">${totalDrink}</div>
         </div>
       </div>

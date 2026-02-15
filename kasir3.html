@@ -608,24 +608,40 @@ const PrinterService = {
             let lowerLabel = item.label.toLowerCase();
             
             if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) {
-                suffix = " P";
+                suffix = "P"; // Hapus spasi agar kontrol manual lebih mudah
             } else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) {
-                suffix = " T";
+                suffix = "T"; // Hapus spasi
             }
             
             // 2. Bersihkan Label dari teks (Porsi)/(Tusuk)
             let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
             
-            // 3. Format Baris
-            // Name: 17 chars (truncate)
-            // Qty: 5 chars (align right) e.g "10 T"
-            // Total: 10 chars (align right) e.g "24.000"
+            // 3. Format QTY agar Angka Rata Kanan (Sejajar Angka)
+            // Kolom JML = 5 karakter.
+            // Kita alokasikan 3 char untuk angka (rata kanan) + 2 char untuk suffix (rata kiri)
+            // Contoh Qty 10, P -> " 10 P"
+            // Contoh Qty 2, -  -> "  2  "
             
+            let numStr = item.qty.toString();
+            
+            // Pad Number to 3 chars right aligned: "  1" or " 10" or "100"
+            let alignNum = ("   " + numStr).slice(-3);
+            
+            // Pad Suffix to 2 chars left aligned: " P" or "  "
+            // Tambahkan spasi sebelum suffix jika ada suffix
+            let alignSuf = suffix ? " " + suffix : "  ";
+            
+            // Gabungkan jadi 5 char
+            let qtyFinal = alignNum + alignSuf; 
+
+            // 4. Format Baris Lengkap
             let nameStr = padRight(cleanLabel, 17);
-            let qtyStr = padLeft(item.qty + suffix, 5);
             let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
             
-            cmds += nameStr + qtyStr + totalStr + this.ESC.FEED;
+            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
+            
+            // 5. Tambahkan jarak (FEED) antar item
+            cmds += this.ESC.FEED;
         });
 
         cmds += "--------------------------------" + this.ESC.FEED;

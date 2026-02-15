@@ -381,7 +381,7 @@
 <script>
 /* ================= PRINTER SERVICE (BLUETOOTH) ================= */
 // Objektif: Menangani koneksi ke plugin Cordova 'cordova-plugin-bluetooth-serial'
-// Jika di browser biasa, ini akan melakukan simulasi koneksi agar UI bisa dites.
+// Jika di browser biasa, ini akan alert karena plugin tidak ada.
 
 const PrinterService = {
     isConnected: false,
@@ -409,18 +409,13 @@ const PrinterService = {
             return;
         }
 
-        // Cek apakah berjalan di Cordova dengan Plugin
-        if (window.bluetoothSerial) {
-            this.scanDevices();
-        } else {
-            // MODE SIMULASI UNTUK BROWSER
-            console.log("Mode Browser: Simulasi Koneksi Bluetooth...");
-            const dummyDevices = [
-                { name: "Printer Thermal 58mm", address: "00:11:22:33:44:55", id: "dummy1" },
-                { name: "RPP02N", address: "AA:BB:CC:DD:EE:FF", id: "dummy2" }
-            ];
-            this.showDeviceList(dummyDevices);
+        // Cek plugin Cordova (Strict check)
+        if (typeof window.bluetoothSerial === 'undefined') {
+            alert("Fitur Bluetooth hanya tersedia saat aplikasi dijalankan sebagai APK di HP Android.");
+            return;
         }
+
+        this.scanDevices();
     },
 
     scanDevices: function() {
@@ -434,8 +429,8 @@ const PrinterService = {
                 document.getElementById('btLoading').style.display = 'none';
             },
             (err) => {
-                alert("Gagal memindai: " + err);
-                document.getElementById('btModal').style.display = 'none';
+                document.getElementById('btLoading').style.display = 'none';
+                document.getElementById('btDeviceList').innerHTML = '<div style="padding:10px;text-align:center;color:red">Gagal memindai: ' + err + '</div>';
             }
         );
     },
@@ -462,18 +457,14 @@ const PrinterService = {
     connectToDevice: function(address) {
         document.getElementById('btModal').style.display = 'none';
         
-        if (window.bluetoothSerial) {
-            window.bluetoothSerial.connect(address, () => {
-                this.onConnected(address);
-            }, (err) => {
-                alert("Gagal koneksi: " + err);
-            });
-        } else {
-            // Simulasi Browser
-            setTimeout(() => {
-                this.onConnected(address);
-            }, 500);
-        }
+        // Strict no simulation
+        if (typeof window.bluetoothSerial === 'undefined') return;
+
+        window.bluetoothSerial.connect(address, () => {
+            this.onConnected(address);
+        }, (err) => {
+            alert("Gagal koneksi: " + err);
+        });
     },
 
     onConnected: function(addr) {
@@ -505,7 +496,13 @@ const PrinterService = {
 
     // GENERATOR DATA STRUK (ESC/POS)
     printReceipt: function() {
-        if (!this.isConnected && window.bluetoothSerial) {
+        // Strict check
+        if (typeof window.bluetoothSerial === 'undefined') {
+            alert("Fitur Print Bluetooth hanya tersedia di APK Android.");
+            return;
+        }
+
+        if (!this.isConnected) {
             alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
             return;
         }
@@ -575,17 +572,11 @@ const PrinterService = {
         // Feed kertas agak banyak biar bisa disobek
         cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
-        // KIRIM DATA
-        if (window.bluetoothSerial) {
-            window.bluetoothSerial.write(cmds, 
-                () => console.log("Print success"), 
-                (err) => alert("Gagal print: " + err)
-            );
-        } else {
-            console.log("=== SIMULASI PRINT DATA (HEX) ===");
-            console.log(cmds); // Ini akan tampil simbol2 aneh, itu normal (kode biner)
-            alert("Mode Simulasi: Data terkirim ke printer (Cek Console untuk detail raw data).");
-        }
+        // KIRIM DATA (Strict Write)
+        window.bluetoothSerial.write(cmds, 
+            () => console.log("Print success"), 
+            (err) => alert("Gagal print: " + err)
+        );
     }
 };
 

@@ -606,8 +606,11 @@ const PrinterService = {
         
         // Loop Item
         cart.forEach(item => {
+            // Hilangkan teks (Porsi) dan (Tusuk) case-insensitive
+            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
+
             // Kita print nama item di baris sendiri jika panjang
-            cmds += item.label + this.ESC.FEED;
+            cmds += cleanLabel + this.ESC.FEED;
             
             // Baris kedua: spasi .... Qty .... Total
             // Format: "               2      24.000"
@@ -981,9 +984,12 @@ function printReceipt() {
   `;
 
   cart.forEach(item => {
+    // Hilangkan teks (Porsi) dan (Tusuk) di struk Web/PDF juga
+    let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
+    
     itemsHtml += `
       <tr>
-        <td style="padding:4px 0; vertical-align:top">${item.label} <br><small style="color:#555">@${formatRp(item.price)}</small></td>
+        <td style="padding:4px 0; vertical-align:top">${cleanLabel} <br><small style="color:#555">@${formatRp(item.price)}</small></td>
         <td style="text-align:center; padding:4px 0; vertical-align:top">${item.qty}</td>
         <td style="text-align:right; padding:4px 0; vertical-align:top">${formatRp(item.price * item.qty)}</td>
       </tr>

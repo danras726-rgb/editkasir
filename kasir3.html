@@ -124,9 +124,14 @@
     .btn.secondary:hover { background: #e2e8f0; }
 
     /* Table Input in Cart */
-    .table-input-row { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; background: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .table-input-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; background: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
     .table-input-field { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; text-align: center; font-size: 16px; color: var(--accent); }
     .table-input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1); }
+    
+    /* Notes Input */
+    .notes-input-row { margin-top: 12px; }
+    .notes-input { width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 14px; color: #334155; background: #f8fafc; resize: none; font-family: inherit; }
+    .notes-input:focus { outline: none; border-color: var(--accent); background: white; }
 
     /* Transaction History Table */
     .history-section { margin-top: 0; }
@@ -286,6 +291,11 @@
           <span class="table-input-label">Nomor Meja:</span>
           <input type="number" id="tableNum" class="table-input-field" placeholder="-" value="">
         </div>
+        
+        <!-- KOLOM CATATAN BARU -->
+        <div class="notes-input-row">
+            <textarea id="orderNote" class="notes-input" rows="2" placeholder="Catatan pesanan... (Contoh: Pedas, Bungkus, dll)"></textarea>
+        </div>
 
         <div style="margin-top:20px; padding-top:16px; border-top:2px solid #f1f5f9;">
           <div style="display:flex;justify-content:space-between;font-weight:800;font-size:20px; color: #0f172a; margin-bottom: 16px;">
@@ -326,10 +336,11 @@
         
         <!-- BUTTON BARU: FORCE SCAN UNPAIRED -->
         <div style="margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; text-align:center;">
-            <div style="font-size:12px; color:#64748b; margin-bottom:8px">Perangkat tidak muncul?</div>
-            <button class="btn secondary" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; font-size:13px;" onclick="PrinterService.scanUnpaired()">
-                🔍 Scan Sekitar (Wajib Izin Lokasi)
+            <div style="font-size:12px; color:#64748b; margin-bottom:8px">Printer belum muncul di list?</div>
+            <button class="btn secondary" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; font-size:13px; font-weight:700; width:100%" onclick="PrinterService.scanUnpaired()">
+                🔍 SCAN PERANGKAT SEKITAR <br> (Klik Untuk Memaksa Izin Lokasi)
             </button>
+            <div style="font-size:11px; color:#ef4444; margin-top:6px; font-style:italic;">*Wajib mengizinkan "Nearby Devices" & "Location" saat popup muncul</div>
         </div>
 
         <button class="btn secondary" style="margin-top:12px" onclick="closeModal('btModal')">Batal</button>
@@ -357,7 +368,6 @@
       <span id="changeDisplay">Rp 0</span>
     </div>
 
-    <!-- UPDATE: Tombol Print Bluetooth Direct -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-bottom:12px">
       <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="printReceipt()">🖨️ Web/PDF</button>
       <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="PrinterService.printReceipt()">🔵 Print Struk</button>
@@ -405,10 +415,10 @@ const PrinterService = {
         ALIGN_RIGHT: '\x1B\x61\x02',
         BOLD_ON: '\x1B\x45\x01',
         BOLD_OFF: '\x1B\x45\x00',
-        TEXT_NORMAL: '\x1D\x21\x00',
-        TEXT_DOUBLE: '\x1D\x21\x11',
-        FEED: '\x0A',
-        CUT: '\x1D\x56\x41\x10'
+        // Font Modes
+        FONT_NORMAL: '\x1B\x21\x00', // Normal
+        FONT_SMALL: '\x1B\x21\x01',  // Small (Font B)
+        FEED: '\x0A'
     },
 
     init: function() {
@@ -464,7 +474,7 @@ const PrinterService = {
         );
     },
 
-    // Metode 2: Discovery Unpaired
+    // Metode 2: Discovery Unpaired (Paksa Izin Lokasi)
     scanUnpaired: function() {
         document.getElementById('btLoading').style.display = 'block';
         document.getElementById('btLoading').innerText = "Sedang mencari perangkat sekitar (10-15 detik)...";
@@ -479,7 +489,7 @@ const PrinterService = {
             (err) => {
                 document.getElementById('btLoading').style.display = 'none';
                 document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; 
-                alert("Gagal scan sekitar. Pastikan IZIN LOKASI & BLUETOOTH diizinkan.");
+                alert("Gagal scan sekitar. Pastikan Anda mengklik 'IZINKAN' pada popup lokasi/nearby devices.");
             }
         );
     },
@@ -548,58 +558,80 @@ const PrinterService = {
         }
 
         const tableNum = document.getElementById('tableNum').value || '-';
+        const note = document.getElementById('orderNote').value || '-';
         const paid = parseInt(document.getElementById('paidInput').value) || 0;
         const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
         const change = paid - total;
         const dateNow = new Date().toLocaleString('id-ID');
         const rp = (n) => Number(n).toLocaleString('id-ID');
 
-        // Helper untuk center/right align text (Asumsi 32 char)
-        const WIDTH = 32;
-        const center = (str) => {
-            const spaces = Math.max(0, Math.floor((WIDTH - str.length) / 2));
-            return " ".repeat(spaces) + str;
-        };
-        const pair = (left, right) => {
-            const spaces = Math.max(0, WIDTH - left.length - right.length);
+        // Helper untuk layout Tabel (Font B: approx 42 chars width)
+        // Kita alokasikan: Nama (20), Jml (6), Total (16)
+        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
+        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
+        
+        const pair = (left, right, width = 32) => {
+            const spaces = Math.max(0, width - left.length - right.length);
             return left + " ".repeat(spaces) + right;
         };
 
         let cmds = "";
         
-        // --- HEADER (Disamakan dengan Web/PDF) ---
+        // --- HEADER (Normal Font) ---
         cmds += this.ESC.RESET;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED;
         cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
         cmds += "Telp/WA: 0852 3141 3408" + this.ESC.FEED;
-        cmds += this.ESC.FEED; // Jarak dikit
+        cmds += this.ESC.FEED;
         
         cmds += this.ESC.ALIGN_LEFT;
         cmds += `${dateNow}` + this.ESC.FEED;
         cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
+        if(note !== '-') {
+            cmds += `Catatan: ${note}` + this.ESC.FEED;
+        }
         cmds += "--------------------------------" + this.ESC.FEED;
 
-        // --- ITEMS (Layout meniru Web) ---
+        // --- TABEL ITEM (Font Small agar muat format tabel) ---
+        // Header Tabel
+        // cmds += this.ESC.FONT_SMALL; // Aktifkan Font Kecil
+        // cmds += "ITEM                 JML    TOTAL" + this.ESC.FEED; 
+        // cmds += "------------------------------------------" + this.ESC.FEED;
+
+        // Versi Normal Font (32 Char) tapi layout Tabel
+        cmds += this.ESC.FONT_NORMAL;
+        cmds += "ITEM             JML       TOTAL" + this.ESC.FEED;
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        // Loop Item
         cart.forEach(item => {
-            // 1. Nama Menu
+            // Kita print nama item di baris sendiri jika panjang
             cmds += item.label + this.ESC.FEED;
             
-            // 2. Rincian: @Harga x Qty .... Total
-            // Web: @12.000             1      12.000
-            // BT : @12.000 x 1                12.000
-            let priceStr = `@${rp(item.price)}`;
-            let qtyStr = `x ${item.qty}`;
+            // Baris kedua: spasi .... Qty .... Total
+            // Format: "               2      24.000"
+            // Kita coba buat sejajar dengan header
+            // JML ada di posisi character ke 18 kira2
             
-            let left = ` ${priceStr} ${qtyStr}`; // Spasi awal utk indent
-            let right = rp(item.qty * item.price);
+            let qtyStr = item.qty.toString();
+            let totalStr = rp(item.qty * item.price);
             
-            cmds += pair(left, right) + this.ESC.FEED;
+            // Layout Manual:
+            // 01234567890123456789012345678901
+            //                99      999.999
+            
+            let line = " ".repeat(17) + 
+                       padLeft(qtyStr, 3) + 
+                       padLeft(totalStr, 12);
+            
+            cmds += line + this.ESC.FEED;
         });
 
         cmds += "--------------------------------" + this.ESC.FEED;
 
-        // --- TOTAL ---
+        // --- TOTAL (Normal Font) ---
+        cmds += this.ESC.FONT_NORMAL; 
         cmds += this.ESC.BOLD_ON;
         cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
         cmds += this.ESC.BOLD_OFF;
@@ -613,7 +645,6 @@ const PrinterService = {
         cmds += "Terima Kasih" + this.ESC.FEED;
         cmds += "Simpan struk ini sbg bukti" + this.ESC.FEED;
         
-        // Feed bawah agak banyak
         cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
         window.bluetoothSerial.write(cmds, 
@@ -806,6 +837,7 @@ function resetCart() {
   renderCart();
   document.getElementById('aiInput').value = '';
   document.getElementById('tableNum').value = '';
+  document.getElementById('orderNote').value = '';
 }
 
 /* ================= AI PARSER LOGIC ================= */
@@ -904,6 +936,7 @@ function processTransaction() {
   const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
   const paid = parseInt(document.getElementById('paidInput').value) || 0;
   const tableNum = document.getElementById('tableNum').value || '-';
+  const note = document.getElementById('orderNote').value || '-';
   
   if (paid < total && paid !== 0) {
     if(!confirm('Uang kurang! Tetap lanjutkan sebagai utang/kurang bayar?')) return;
@@ -913,6 +946,7 @@ function processTransaction() {
     id: Date.now(),
     date: new Date().toLocaleString('id-ID'),
     tableNum: tableNum,
+    note: note, // Simpan catatan
     items: [...cart],
     total: total,
     paid: paid
@@ -931,6 +965,7 @@ function processTransaction() {
 /* ================= PRINT RECEIPT (WEB/PDF) ================= */
 function printReceipt() {
   const tableNum = document.getElementById('tableNum').value || '-';
+  const note = document.getElementById('orderNote').value || '-';
   const paid = parseInt(document.getElementById('paidInput').value) || 0;
   const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
   const change = paid - total;
@@ -964,6 +999,7 @@ function printReceipt() {
       <div class="receipt-info">Telp/WA: 0852 3141 3408</div>
       <div class="receipt-info" style="margin-top:8px">${dateNow}</div>
       <div class="receipt-info" style="font-weight:bold; font-size:14px">MEJA: ${tableNum}</div>
+      ${note !== '-' ? `<div class="receipt-info" style="font-style:italic">Catatan: ${note}</div>` : ''}
     </div>
     
     <div>${itemsHtml}</div>
@@ -1134,12 +1170,13 @@ function renderHistory() {
   transactions.slice(0, 20).forEach(t => {
     const itemsStr = t.items.map(i => `${i.label} <span style="color:#64748b; font-weight:600">x${i.qty}</span>`).join(', ');
     const mejaInfo = t.tableNum ? `<span style="background:#f1f5f9;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px; color:#475569; border:1px solid #e2e8f0;">${t.tableNum}</span>` : '-';
-    
+    const noteInfo = t.note && t.note !== '-' ? `<div style="font-size:11px;color:#d97706;margin-top:2px;">Catatan: ${t.note}</div>` : '';
+
     const row = `
       <tr>
         <td style="color:#64748b;font-size:12px; font-family:monospace;">${t.date.split(',')[1] || t.date}</td>
         <td style="text-align:center">${mejaInfo}</td>
-        <td style="line-height:1.5">${itemsStr}</td>
+        <td style="line-height:1.5">${itemsStr}${noteInfo}</td>
         <td style="text-align:right;font-weight:700; color:#0f172a;">${formatRp(t.total)}</td>
         <td style="text-align:center; white-space:nowrap">
           <button onclick="editTransaction(${t.id})" class="action-btn edit" title="Edit Transaksi">
@@ -1177,6 +1214,12 @@ function editTransaction(id) {
   } else {
       document.getElementById('tableNum').value = '';
   }
+  
+  if (trx.note && trx.note !== '-') {
+      document.getElementById('orderNote').value = trx.note;
+  } else {
+      document.getElementById('orderNote').value = '';
+  }
 
   transactions.splice(trxIndex, 1);
   localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
@@ -1211,6 +1254,7 @@ function exportExcel() {
   const data = transactions.map(t => ({
     Tanggal: t.date,
     Meja: t.tableNum || '-',
+    Catatan: t.note || '-',
     Total: t.total,
     Bayar: t.paid,
     Item: t.items.map(i => `${i.label} (${i.qty})`).join('; ')

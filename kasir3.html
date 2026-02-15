@@ -6,6 +6,8 @@
   <title>Kasir CAKSABAR</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- WAJIB: Script Cordova agar plugin berfungsi di APK -->
+  <script src="cordova.js"></script>
   <style>
     :root{--muted:#64748b;--accent:#0891b2;--accent-dark:#0e7490;--bg:#f1f5f9;--card:#ffffff;--red:#ef4444;--orange:#f59e0b;--green:#10b981}
     *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,sans-serif}
@@ -411,11 +413,20 @@ const PrinterService = {
 
         // Cek plugin Cordova (Strict check)
         if (typeof window.bluetoothSerial === 'undefined') {
-            alert("Fitur Bluetooth hanya tersedia saat aplikasi dijalankan sebagai APK di HP Android.");
+            alert("Plugin Bluetooth tidak terdeteksi! Pastikan instalasi plugin cordova-plugin-bluetooth-serial benar dan script cordova.js dimuat.");
             return;
         }
 
-        this.scanDevices();
+        // Cek status Bluetooth terlebih dahulu
+        window.bluetoothSerial.isEnabled(
+            () => {
+                // Bluetooth nyala, lanjutkan scan
+                this.scanDevices();
+            },
+            () => {
+                alert("Harap aktifkan Bluetooth di HP Anda terlebih dahulu!");
+            }
+        );
     },
 
     scanDevices: function() {
@@ -441,7 +452,7 @@ const PrinterService = {
         list.innerHTML = '';
 
         if (devices.length === 0) {
-            list.innerHTML = '<div style="padding:10px;text-align:center">Tidak ada perangkat paired. Silakan pair di pengaturan Bluetooth HP dulu.</div>';
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;line-height:1.6">Tidak ada perangkat tersimpan.<br><strong>Harap Pairing Printer di Pengaturan Bluetooth HP terlebih dahulu.</strong></div>';
             return;
         }
 

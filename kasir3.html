@@ -323,7 +323,16 @@
         <h3 style="margin:0 0 12px;">Pilih Printer Bluetooth</h3>
         <div id="btLoading" style="display:none; color:var(--muted); font-size:13px; text-align:center;">Sedang memindai perangkat...</div>
         <div id="btDeviceList"></div>
-        <button class="btn secondary" style="margin-top:16px" onclick="closeModal('btModal')">Batal</button>
+        
+        <!-- BUTTON BARU: FORCE SCAN UNPAIRED -->
+        <div style="margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; text-align:center;">
+            <div style="font-size:12px; color:#64748b; margin-bottom:8px">Perangkat tidak muncul?</div>
+            <button class="btn secondary" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; font-size:13px;" onclick="PrinterService.scanUnpaired()">
+                🔍 Scan Sekitar (Wajib Izin Lokasi)
+            </button>
+        </div>
+
+        <button class="btn secondary" style="margin-top:12px" onclick="closeModal('btModal')">Batal</button>
     </div>
 </div>
 
@@ -382,12 +391,11 @@
 
 <script>
 /* ================= PRINTER SERVICE (BLUETOOTH) ================= */
-// Objektif: Menangani koneksi ke plugin Cordova 'cordova-plugin-bluetooth-serial'
-// Jika di browser biasa, ini akan alert karena plugin tidak ada.
 
 const PrinterService = {
     isConnected: false,
     macAddress: null,
+    isCordovaReady: false,
 
     // ESC/POS Commands Helpers
     ESC: {
@@ -403,6 +411,13 @@ const PrinterService = {
         CUT: '\x1D\x56\x41\x10'
     },
 
+    init: function() {
+        document.addEventListener('deviceready', () => {
+            console.log("Cordova Device Ready");
+            this.isCordovaReady = true;
+        }, false);
+    },
+
     connect: function() {
         if (this.isConnected) {
             if(confirm('Putuskan koneksi printer?')) {
@@ -411,25 +426,28 @@ const PrinterService = {
             return;
         }
 
-        // Cek plugin Cordova (Strict check)
-        if (typeof window.bluetoothSerial === 'undefined') {
-            alert("Plugin Bluetooth tidak terdeteksi! Pastikan instalasi plugin cordova-plugin-bluetooth-serial benar dan script cordova.js dimuat.");
+        if (!this.isCordovaReady && typeof window.bluetoothSerial === 'undefined') {
+            alert("Plugin Bluetooth belum siap atau tidak terinstal. Pastikan membuka aplikasi di Android.");
             return;
         }
 
-        // Cek status Bluetooth terlebih dahulu
+        // Cek status Bluetooth
         window.bluetoothSerial.isEnabled(
             () => {
-                // Bluetooth nyala, lanjutkan scan
-                this.scanDevices();
+                this.scanPaired();
             },
             () => {
-                alert("Harap aktifkan Bluetooth di HP Anda terlebih dahulu!");
+                alert("Bluetooth mati. Harap aktifkan Bluetooth di HP Anda terlebih dahulu!");
+                window.bluetoothSerial.enable(
+                    () => this.scanPaired(),
+                    () => alert("Gagal mengaktifkan Bluetooth.")
+                );
             }
         );
     },
 
-    scanDevices: function() {
+    // Metode 1: List Paired
+    scanPaired: function() {
         document.getElementById('btModal').style.display = 'flex';
         document.getElementById('btLoading').style.display = 'block';
         document.getElementById('btDeviceList').innerHTML = '';
@@ -441,7 +459,27 @@ const PrinterService = {
             },
             (err) => {
                 document.getElementById('btLoading').style.display = 'none';
-                document.getElementById('btDeviceList').innerHTML = '<div style="padding:10px;text-align:center;color:red">Gagal memindai: ' + err + '</div>';
+                alert("Gagal mengambil paired devices: " + err);
+            }
+        );
+    },
+
+    // Metode 2: Discovery Unpaired
+    scanUnpaired: function() {
+        document.getElementById('btLoading').style.display = 'block';
+        document.getElementById('btLoading').innerText = "Sedang mencari perangkat sekitar (10-15 detik)...";
+        document.getElementById('btDeviceList').innerHTML = '';
+
+        window.bluetoothSerial.discoverUnpaired(
+            (devices) => {
+                this.showDeviceList(devices);
+                document.getElementById('btLoading').style.display = 'none';
+                document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; 
+            },
+            (err) => {
+                document.getElementById('btLoading').style.display = 'none';
+                document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; 
+                alert("Gagal scan sekitar. Pastikan IZIN LOKASI & BLUETOOTH diizinkan.");
             }
         );
     },
@@ -452,14 +490,20 @@ const PrinterService = {
         list.innerHTML = '';
 
         if (devices.length === 0) {
-            list.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;line-height:1.6">Tidak ada perangkat tersimpan.<br><strong>Harap Pairing Printer di Pengaturan Bluetooth HP terlebih dahulu.</strong></div>';
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;line-height:1.6">Tidak ada perangkat ditemukan.<br>Coba klik tombol <strong>Scan Sekitar</strong> di bawah.</div>';
             return;
         }
 
-        devices.forEach(d => {
+        const uniqueDevices = Array.from(new Set(devices.map(a => a.id)))
+            .map(id => {
+            return devices.find(a => a.id === id)
+        });
+
+        uniqueDevices.forEach(d => {
             const item = document.createElement('div');
             item.className = 'bt-device-item';
-            item.innerHTML = `<span>${d.name || 'Unnamed'}</span> <small style="color:#aaa">${d.address || d.id}</small>`;
+            const dispName = d.name ? d.name : (d.id ? d.id : 'Unknown Device');
+            item.innerHTML = `<span>${dispName}</span> <small style="color:#aaa">${d.address || d.id}</small>`;
             item.onclick = () => this.connectToDevice(d.address || d.id);
             list.appendChild(item);
         });
@@ -468,13 +512,10 @@ const PrinterService = {
     connectToDevice: function(address) {
         document.getElementById('btModal').style.display = 'none';
         
-        // Strict no simulation
-        if (typeof window.bluetoothSerial === 'undefined') return;
-
         window.bluetoothSerial.connect(address, () => {
             this.onConnected(address);
         }, (err) => {
-            alert("Gagal koneksi: " + err);
+            alert("Gagal koneksi ke " + address + ": " + err);
         });
     },
 
@@ -482,7 +523,6 @@ const PrinterService = {
         this.isConnected = true;
         this.macAddress = addr;
         
-        // Update UI Button
         const btn = document.getElementById('btnConnect');
         btn.classList.remove('disconnected');
         btn.classList.add('connected');
@@ -490,11 +530,7 @@ const PrinterService = {
     },
 
     disconnect: function() {
-        if (window.bluetoothSerial) {
-            window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected());
-        } else {
-            this.onDisconnected();
-        }
+        window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected());
     },
 
     onDisconnected: function() {
@@ -505,14 +541,7 @@ const PrinterService = {
         alert("Printer Terputus");
     },
 
-    // GENERATOR DATA STRUK (ESC/POS)
     printReceipt: function() {
-        // Strict check
-        if (typeof window.bluetoothSerial === 'undefined') {
-            alert("Fitur Print Bluetooth hanya tersedia di APK Android.");
-            return;
-        }
-
         if (!this.isConnected) {
             alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
             return;
@@ -523,67 +552,70 @@ const PrinterService = {
         const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
         const change = paid - total;
         const dateNow = new Date().toLocaleString('id-ID');
-        
-        // Format Rupiah simple
         const rp = (n) => Number(n).toLocaleString('id-ID');
+
+        // Helper untuk center/right align text (Asumsi 32 char)
+        const WIDTH = 32;
+        const center = (str) => {
+            const spaces = Math.max(0, Math.floor((WIDTH - str.length) / 2));
+            return " ".repeat(spaces) + str;
+        };
+        const pair = (left, right) => {
+            const spaces = Math.max(0, WIDTH - left.length - right.length);
+            return left + " ".repeat(spaces) + right;
+        };
 
         let cmds = "";
         
-        // --- HEADER ---
+        // --- HEADER (Disamakan dengan Web/PDF) ---
         cmds += this.ESC.RESET;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED;
         cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
-        cmds += "--------------------------------" + this.ESC.FEED;
+        cmds += "Telp/WA: 0852 3141 3408" + this.ESC.FEED;
+        cmds += this.ESC.FEED; // Jarak dikit
         
-        // --- INFO ---
         cmds += this.ESC.ALIGN_LEFT;
-        cmds += `Tgl : ${dateNow}` + this.ESC.FEED;
-        cmds += `Meja: ${tableNum}` + this.ESC.FEED;
+        cmds += `${dateNow}` + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
         cmds += "--------------------------------" + this.ESC.FEED;
 
-        // --- ITEMS ---
+        // --- ITEMS (Layout meniru Web) ---
         cart.forEach(item => {
-            // Nama Menu
+            // 1. Nama Menu
             cmds += item.label + this.ESC.FEED;
             
-            // Hitungan: Qty x Harga = Total
-            // Format:  2 x 15.000      30.000
-            // Kita coba format manual spasi
-            let leftSide = ` ${item.qty} x ${rp(item.price)}`;
-            let rightSide = rp(item.qty * item.price);
+            // 2. Rincian: @Harga x Qty .... Total
+            // Web: @12.000             1      12.000
+            // BT : @12.000 x 1                12.000
+            let priceStr = `@${rp(item.price)}`;
+            let qtyStr = `x ${item.qty}`;
             
-            // Logika Spasi Sederhana (Asumsi 32 Char Width)
-            let spaceLen = 32 - leftSide.length - rightSide.length;
-            if (spaceLen < 0) spaceLen = 1;
+            let left = ` ${priceStr} ${qtyStr}`; // Spasi awal utk indent
+            let right = rp(item.qty * item.price);
             
-            cmds += leftSide + " ".repeat(spaceLen) + rightSide + this.ESC.FEED;
+            cmds += pair(left, right) + this.ESC.FEED;
         });
 
         cmds += "--------------------------------" + this.ESC.FEED;
 
         // --- TOTAL ---
         cmds += this.ESC.BOLD_ON;
-        let totalStr = `TOTAL: Rp ${rp(total)}`;
-        let totalSpace = 32 - totalStr.length;
-        if (totalSpace < 0) totalSpace = 0;
-        cmds += " ".repeat(totalSpace) + totalStr + this.ESC.FEED;
+        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
         cmds += this.ESC.BOLD_OFF;
         
-        // --- BAYAR & KEMBALI ---
-        cmds += `Bayar  : Rp ${rp(paid)}` + this.ESC.FEED;
-        cmds += `Kembali: Rp ${rp(change < 0 ? 0 : change)}` + this.ESC.FEED;
+        cmds += pair("Bayar", "Rp " + rp(paid)) + this.ESC.FEED;
+        cmds += pair("Kembali", "Rp " + rp(change < 0 ? 0 : change)) + this.ESC.FEED;
 
         // --- FOOTER ---
         cmds += this.ESC.FEED;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += "Terima Kasih" + this.ESC.FEED;
-        cmds += "Simpan struk ini sebagai bukti" + this.ESC.FEED;
+        cmds += "Simpan struk ini sbg bukti" + this.ESC.FEED;
         
-        // Feed kertas agak banyak biar bisa disobek
+        // Feed bawah agak banyak
         cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
-        // KIRIM DATA (Strict Write)
         window.bluetoothSerial.write(cmds, 
             () => console.log("Print success"), 
             (err) => alert("Gagal print: " + err)
@@ -630,6 +662,9 @@ const formatRp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
 
 /* ================= INIT ================= */
 function init() {
+  // Init Printer Service (Listen Device Ready)
+  PrinterService.init();
+
   renderMenuGrid();
   updateStats();
   renderHistory();

@@ -565,8 +565,10 @@ const PrinterService = {
         const dateNow = new Date().toLocaleString('id-ID');
         const rp = (n) => Number(n).toLocaleString('id-ID');
 
-        // Helper untuk layout Tabel (Font B: approx 42 chars width)
-        // Kita alokasikan: Nama (20), Jml (6), Total (16)
+        // Helper Layout Tabel (Width 32 Chars)
+        // Format: Name (17 char left) + Qty(5 char right) + Total (10 char right)
+        // Contoh: "Sate Kambing    10 T    24.000"
+        
         const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
         const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
         
@@ -577,7 +579,7 @@ const PrinterService = {
 
         let cmds = "";
         
-        // --- HEADER (Normal Font) ---
+        // --- HEADER ---
         cmds += this.ESC.RESET;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED;
@@ -593,48 +595,42 @@ const PrinterService = {
         }
         cmds += "--------------------------------" + this.ESC.FEED;
 
-        // --- TABEL ITEM (Font Small agar muat format tabel) ---
-        // Header Tabel
-        // cmds += this.ESC.FONT_SMALL; // Aktifkan Font Kecil
-        // cmds += "ITEM                 JML    TOTAL" + this.ESC.FEED; 
-        // cmds += "------------------------------------------" + this.ESC.FEED;
-
-        // Versi Normal Font (32 Char) tapi layout Tabel
+        // --- TABEL ITEM ---
+        // Header (32 Char): ITEM(17) + JML(5) + TOTAL(10)
         cmds += this.ESC.FONT_NORMAL;
-        cmds += "ITEM             JML       TOTAL" + this.ESC.FEED;
+        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
         cmds += "--------------------------------" + this.ESC.FEED;
         
-        // Loop Item
         cart.forEach(item => {
-            // Hilangkan teks (Porsi) dan (Tusuk) case-insensitive
+            // 1. Tentukan Suffix (P/T)
+            let suffix = "";
+            let lowerId = item.id.toLowerCase();
+            let lowerLabel = item.label.toLowerCase();
+            
+            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) {
+                suffix = " P";
+            } else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) {
+                suffix = " T";
+            }
+            
+            // 2. Bersihkan Label dari teks (Porsi)/(Tusuk)
             let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
-
-            // Kita print nama item di baris sendiri jika panjang
-            cmds += cleanLabel + this.ESC.FEED;
             
-            // Baris kedua: spasi .... Qty .... Total
-            // Format: "               2      24.000"
-            // Kita coba buat sejajar dengan header
-            // JML ada di posisi character ke 18 kira2
+            // 3. Format Baris
+            // Name: 17 chars (truncate)
+            // Qty: 5 chars (align right) e.g "10 T"
+            // Total: 10 chars (align right) e.g "24.000"
             
-            let qtyStr = item.qty.toString();
-            let totalStr = rp(item.qty * item.price);
+            let nameStr = padRight(cleanLabel, 17);
+            let qtyStr = padLeft(item.qty + suffix, 5);
+            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
             
-            // Layout Manual:
-            // 01234567890123456789012345678901
-            //                99      999.999
-            
-            let line = " ".repeat(17) + 
-                       padLeft(qtyStr, 3) + 
-                       padLeft(totalStr, 12);
-            
-            cmds += line + this.ESC.FEED;
+            cmds += nameStr + qtyStr + totalStr + this.ESC.FEED;
         });
 
         cmds += "--------------------------------" + this.ESC.FEED;
 
-        // --- TOTAL (Normal Font) ---
-        cmds += this.ESC.FONT_NORMAL; 
+        // --- TOTAL ---
         cmds += this.ESC.BOLD_ON;
         cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
         cmds += this.ESC.BOLD_OFF;
@@ -984,13 +980,24 @@ function printReceipt() {
   `;
 
   cart.forEach(item => {
+    // 1. Tentukan Suffix (P/T)
+    let suffix = "";
+    let lowerId = item.id.toLowerCase();
+    let lowerLabel = item.label.toLowerCase();
+    
+    if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) {
+        suffix = " P";
+    } else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) {
+        suffix = " T";
+    }
+
     // Hilangkan teks (Porsi) dan (Tusuk) di struk Web/PDF juga
     let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
     
     itemsHtml += `
       <tr>
         <td style="padding:4px 0; vertical-align:top">${cleanLabel} <br><small style="color:#555">@${formatRp(item.price)}</small></td>
-        <td style="text-align:center; padding:4px 0; vertical-align:top">${item.qty}</td>
+        <td style="text-align:center; padding:4px 0; vertical-align:top">${item.qty}${suffix}</td>
         <td style="text-align:right; padding:4px 0; vertical-align:top">${formatRp(item.price * item.qty)}</td>
       </tr>
     `;

@@ -54,8 +54,20 @@
     @media(min-width: 600px) { h1 { font-size: 24px; } }
     .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
     
-    .header-btn { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: 0.2s; color: #334155; }
+    /* Header Button Group */
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .header-btn { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: 0.2s; color: #334155; display: flex; align-items: center; justify-content: center; }
     .header-btn:hover { background: #e2e8f0; color: var(--accent); transform: translateY(-1px); }
+    
+    /* Tombol Bluetooth Spesifik */
+    #btnConnect { position: relative; }
+    #btnConnect.connected { background: #ecfdf5; border-color: #6ee7b7; color: #059669; }
+    #btnConnect.disconnected { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+    .bt-status-dot { width: 8px; height: 8px; border-radius: 50%; position: absolute; top: 6px; right: 6px; }
+    .connected .bt-status-dot { background: #10b981; }
+    .disconnected .bt-status-dot { background: #ef4444; }
+
 
     /* === COMPONENTS === */
     .card-box { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
@@ -80,62 +92,21 @@
     .menu-item:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px -2px rgba(8, 145, 178, 0.15); }
     .m-name { font-weight: 600; font-size: 15px; line-height: 1.4; margin-bottom: 8px; color: #334155; }
     
-    /* Layout Baru Menu Item (Harga di kiri, Tombol di Kanan) */
+    /* Layout Baru Menu Item */
     .menu-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px; }
     .m-price { font-size: 14px; color: var(--accent); font-weight: 700; }
     
     /* Tombol Tambah Sederhana */
-    .add-btn-simple {
-        background: var(--accent);
-        color: white;
-        border-radius: 8px;
-        padding: 6px 12px;
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        border: none;
-        transition: 0.2s;
-    }
+    .add-btn-simple { background: var(--accent); color: white; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; border: none; transition: 0.2s; }
     .add-btn-simple:active { transform: scale(0.95); background: var(--accent-dark); }
 
     /* Kontrol Plus Minus */
-    .qty-controls {
-      display: flex;
-      align-items: center;
-      background: #f1f5f9;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-      height: 30px;
-    }
-    .qty-btn {
-      width: 28px;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 16px;
-      transition: 0.2s;
-      padding: 0;
-    }
+    .qty-controls { display: flex; align-items: center; background: #f1f5f9; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; height: 30px; }
+    .qty-btn { width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; background: #fff; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; padding: 0; }
     .qty-btn:active { background: #e2e8f0; }
     .qty-btn.minus { color: var(--red); border-right: 1px solid #e2e8f0; }
     .qty-btn.plus { color: var(--green); border-left: 1px solid #e2e8f0; }
-    .qty-val {
-      padding: 0 8px;
-      font-size: 13px;
-      font-weight: 700;
-      min-width: 24px;
-      text-align: center;
-      color: #0f172a;
-    }
+    .qty-val { padding: 0 8px; font-size: 13px; font-weight: 700; min-width: 24px; text-align: center; color: #0f172a; }
 
     /* Cart */
     .cart-wrapper { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
@@ -149,7 +120,6 @@
     .btn:active { transform: translateY(1px); box-shadow: none; }
     .btn.secondary { background: #f1f5f9; color: #475569; box-shadow: none; border: 1px solid #cbd5e1; }
     .btn.secondary:hover { background: #e2e8f0; }
-    .btn.danger { background: #fee2e2; color: #991b1b; box-shadow: none; border: 1px solid #fca5a5; }
 
     /* Table Input in Cart */
     .table-input-row { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; background: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
@@ -157,7 +127,7 @@
     .table-input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1); }
 
     /* Transaction History Table */
-    .history-section { margin-top: 0; } /* Reset margin for grid layout */
+    .history-section { margin-top: 0; }
     .table-container { background: #fff; border-radius: 16px; padding: 0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { text-align: left; color: var(--muted); padding: 14px 16px; font-weight: 700; border-bottom: 2px solid #e2e8f0; background: #f8fafc; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -165,12 +135,9 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #f8fafc; }
     
-    /* Tombol Aksi di Tabel */
     .action-btn { border: none; background: none; cursor: pointer; padding: 6px; border-radius: 6px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
     .action-btn.edit { color: var(--orange); background: #fff7ed; border: 1px solid #ffedd5; margin-right: 6px; }
-    .action-btn.edit:hover { background: #ffedd5; }
     .action-btn.del { color: var(--red); background: #fef2f2; border: 1px solid #fee2e2; }
-    .action-btn.del:hover { background: #fee2e2; }
 
     /* Modal Styles */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(4px); padding: 20px; }
@@ -179,6 +146,12 @@
     input.money { width: 100%; padding: 16px; font-size: 24px; text-align: center; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 16px; font-weight: 700; color: #0f172a; letter-spacing: 1px; }
     input.money:focus { border-color: var(--accent); outline: none; }
 
+    /* Bluetooth Device List Modal */
+    #btDeviceList { max-height: 200px; overflow-y: auto; margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
+    .bt-device-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+    .bt-device-item:hover { background: #f8fafc; }
+    .bt-device-item:last-child { border-bottom: none; }
+    
     /* Full Page Report */
     #reportPage { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; overflow-y: auto; padding: 0; }
     .report-header { background: white; padding: 16px 20px; position: sticky; top: 0; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); z-index: 10; max-width: 100%; }
@@ -209,7 +182,7 @@
     .receipt-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin: 4px 0; }
     .receipt-footer { text-align: center; margin-top: 20px; font-size: 10px; }
     
-    /* === SPLASH SCREEN (Keep Existing) === */
+    /* === SPLASH SCREEN === */
     #splash-screen { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease-out, visibility 0.6s; }
     .splash-logo-container { width: 100px; height: 100px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(8, 145, 178, 0.3); margin-bottom: 24px; animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
     .splash-logo-img { width: 60px; height: 60px; object-fit: contain; filter: brightness(0) invert(1); }
@@ -241,9 +214,17 @@
         <div class="sub">Sistem Kasir Cerdas & Modern</div>
       </div>
     </div>
-    <button class="header-btn" onclick="showReport()" title="Laporan Penjualan">
-      📊
-    </button>
+    
+    <!-- HEADER ACTIONS: Koneksi Bluetooth & Laporan -->
+    <div class="header-actions">
+      <button id="btnConnect" class="header-btn disconnected" onclick="PrinterService.connect()" title="Koneksi Printer Bluetooth">
+        <span class="bt-status-dot"></span>
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.71,7.71L12,2h-1v7.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L11,14.41V22h1l5.71-5.71L13.41,12L17.71,7.71z M13,5.83l1.88,1.88L13,9.59V5.83z M13,18.17v-3.76l1.88,1.88L13,18.17z"/></svg>
+      </button>
+      <button class="header-btn" onclick="showReport()" title="Laporan Penjualan">
+        📊
+      </button>
+    </div>
   </header>
 
   <div class="layout-grid">
@@ -334,6 +315,16 @@
 
 </div>
 
+<!-- MODAL PILIH BLUETOOTH -->
+<div id="btModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3 style="margin:0 0 12px;">Pilih Printer Bluetooth</h3>
+        <div id="btLoading" style="display:none; color:var(--muted); font-size:13px; text-align:center;">Sedang memindai perangkat...</div>
+        <div id="btDeviceList"></div>
+        <button class="btn secondary" style="margin-top:16px" onclick="closeModal('btModal')">Batal</button>
+    </div>
+</div>
+
 <!-- MODAL PEMBAYARAN -->
 <div id="paymentModal" class="modal-overlay">
   <div class="modal-card">
@@ -355,10 +346,10 @@
       <span id="changeDisplay">Rp 0</span>
     </div>
 
-    <!-- UPDATE: Ganti Layout Tombol Print -->
+    <!-- UPDATE: Tombol Print Bluetooth Direct -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-bottom:12px">
       <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="printReceipt()">🖨️ Web/PDF</button>
-      <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="printBluetooth()">🔵 Bluetooth</button>
+      <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="PrinterService.printReceipt()">🔵 Print Struk</button>
     </div>
     <button class="btn" style="background: var(--green); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="processTransaction()">✅ Selesai</button>
     
@@ -384,10 +375,222 @@
   </div>
 </div>
 
-<!-- CONTAINER STRUK -->
+<!-- CONTAINER STRUK (UNTUK PDF/WEB PRINT) -->
 <div id="receipt-area"></div>
 
 <script>
+/* ================= PRINTER SERVICE (BLUETOOTH) ================= */
+// Objektif: Menangani koneksi ke plugin Cordova 'cordova-plugin-bluetooth-serial'
+// Jika di browser biasa, ini akan melakukan simulasi koneksi agar UI bisa dites.
+
+const PrinterService = {
+    isConnected: false,
+    macAddress: null,
+
+    // ESC/POS Commands Helpers
+    ESC: {
+        RESET: '\x1B\x40',
+        ALIGN_LEFT: '\x1B\x61\x00',
+        ALIGN_CENTER: '\x1B\x61\x01',
+        ALIGN_RIGHT: '\x1B\x61\x02',
+        BOLD_ON: '\x1B\x45\x01',
+        BOLD_OFF: '\x1B\x45\x00',
+        TEXT_NORMAL: '\x1D\x21\x00',
+        TEXT_DOUBLE: '\x1D\x21\x11',
+        FEED: '\x0A',
+        CUT: '\x1D\x56\x41\x10'
+    },
+
+    connect: function() {
+        if (this.isConnected) {
+            if(confirm('Putuskan koneksi printer?')) {
+                this.disconnect();
+            }
+            return;
+        }
+
+        // Cek apakah berjalan di Cordova dengan Plugin
+        if (window.bluetoothSerial) {
+            this.scanDevices();
+        } else {
+            // MODE SIMULASI UNTUK BROWSER
+            console.log("Mode Browser: Simulasi Koneksi Bluetooth...");
+            const dummyDevices = [
+                { name: "Printer Thermal 58mm", address: "00:11:22:33:44:55", id: "dummy1" },
+                { name: "RPP02N", address: "AA:BB:CC:DD:EE:FF", id: "dummy2" }
+            ];
+            this.showDeviceList(dummyDevices);
+        }
+    },
+
+    scanDevices: function() {
+        document.getElementById('btModal').style.display = 'flex';
+        document.getElementById('btLoading').style.display = 'block';
+        document.getElementById('btDeviceList').innerHTML = '';
+
+        window.bluetoothSerial.list(
+            (devices) => {
+                this.showDeviceList(devices);
+                document.getElementById('btLoading').style.display = 'none';
+            },
+            (err) => {
+                alert("Gagal memindai: " + err);
+                document.getElementById('btModal').style.display = 'none';
+            }
+        );
+    },
+
+    showDeviceList: function(devices) {
+        document.getElementById('btModal').style.display = 'flex';
+        const list = document.getElementById('btDeviceList');
+        list.innerHTML = '';
+
+        if (devices.length === 0) {
+            list.innerHTML = '<div style="padding:10px;text-align:center">Tidak ada perangkat paired. Silakan pair di pengaturan Bluetooth HP dulu.</div>';
+            return;
+        }
+
+        devices.forEach(d => {
+            const item = document.createElement('div');
+            item.className = 'bt-device-item';
+            item.innerHTML = `<span>${d.name || 'Unnamed'}</span> <small style="color:#aaa">${d.address || d.id}</small>`;
+            item.onclick = () => this.connectToDevice(d.address || d.id);
+            list.appendChild(item);
+        });
+    },
+
+    connectToDevice: function(address) {
+        document.getElementById('btModal').style.display = 'none';
+        
+        if (window.bluetoothSerial) {
+            window.bluetoothSerial.connect(address, () => {
+                this.onConnected(address);
+            }, (err) => {
+                alert("Gagal koneksi: " + err);
+            });
+        } else {
+            // Simulasi Browser
+            setTimeout(() => {
+                this.onConnected(address);
+            }, 500);
+        }
+    },
+
+    onConnected: function(addr) {
+        this.isConnected = true;
+        this.macAddress = addr;
+        
+        // Update UI Button
+        const btn = document.getElementById('btnConnect');
+        btn.classList.remove('disconnected');
+        btn.classList.add('connected');
+        alert("Printer Terhubung!");
+    },
+
+    disconnect: function() {
+        if (window.bluetoothSerial) {
+            window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected());
+        } else {
+            this.onDisconnected();
+        }
+    },
+
+    onDisconnected: function() {
+        this.isConnected = false;
+        const btn = document.getElementById('btnConnect');
+        btn.classList.remove('connected');
+        btn.classList.add('disconnected');
+        alert("Printer Terputus");
+    },
+
+    // GENERATOR DATA STRUK (ESC/POS)
+    printReceipt: function() {
+        if (!this.isConnected && window.bluetoothSerial) {
+            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
+            return;
+        }
+
+        const tableNum = document.getElementById('tableNum').value || '-';
+        const paid = parseInt(document.getElementById('paidInput').value) || 0;
+        const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+        const change = paid - total;
+        const dateNow = new Date().toLocaleString('id-ID');
+        
+        // Format Rupiah simple
+        const rp = (n) => Number(n).toLocaleString('id-ID');
+
+        let cmds = "";
+        
+        // --- HEADER ---
+        cmds += this.ESC.RESET;
+        cmds += this.ESC.ALIGN_CENTER;
+        cmds += this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED;
+        cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        // --- INFO ---
+        cmds += this.ESC.ALIGN_LEFT;
+        cmds += `Tgl : ${dateNow}` + this.ESC.FEED;
+        cmds += `Meja: ${tableNum}` + this.ESC.FEED;
+        cmds += "--------------------------------" + this.ESC.FEED;
+
+        // --- ITEMS ---
+        cart.forEach(item => {
+            // Nama Menu
+            cmds += item.label + this.ESC.FEED;
+            
+            // Hitungan: Qty x Harga = Total
+            // Format:  2 x 15.000      30.000
+            // Kita coba format manual spasi
+            let leftSide = ` ${item.qty} x ${rp(item.price)}`;
+            let rightSide = rp(item.qty * item.price);
+            
+            // Logika Spasi Sederhana (Asumsi 32 Char Width)
+            let spaceLen = 32 - leftSide.length - rightSide.length;
+            if (spaceLen < 0) spaceLen = 1;
+            
+            cmds += leftSide + " ".repeat(spaceLen) + rightSide + this.ESC.FEED;
+        });
+
+        cmds += "--------------------------------" + this.ESC.FEED;
+
+        // --- TOTAL ---
+        cmds += this.ESC.BOLD_ON;
+        let totalStr = `TOTAL: Rp ${rp(total)}`;
+        let totalSpace = 32 - totalStr.length;
+        if (totalSpace < 0) totalSpace = 0;
+        cmds += " ".repeat(totalSpace) + totalStr + this.ESC.FEED;
+        cmds += this.ESC.BOLD_OFF;
+        
+        // --- BAYAR & KEMBALI ---
+        cmds += `Bayar  : Rp ${rp(paid)}` + this.ESC.FEED;
+        cmds += `Kembali: Rp ${rp(change < 0 ? 0 : change)}` + this.ESC.FEED;
+
+        // --- FOOTER ---
+        cmds += this.ESC.FEED;
+        cmds += this.ESC.ALIGN_CENTER;
+        cmds += "Terima Kasih" + this.ESC.FEED;
+        cmds += "Simpan struk ini sebagai bukti" + this.ESC.FEED;
+        
+        // Feed kertas agak banyak biar bisa disobek
+        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
+
+        // KIRIM DATA
+        if (window.bluetoothSerial) {
+            window.bluetoothSerial.write(cmds, 
+                () => console.log("Print success"), 
+                (err) => alert("Gagal print: " + err)
+            );
+        } else {
+            console.log("=== SIMULASI PRINT DATA (HEX) ===");
+            console.log(cmds); // Ini akan tampil simbol2 aneh, itu normal (kode biner)
+            alert("Mode Simulasi: Data terkirim ke printer (Cek Console untuk detail raw data).");
+        }
+    }
+};
+
+/* ================= END PRINTER SERVICE ================= */
+
 /**
  * DATA MENU & KONFIGURASI HARGA
  */
@@ -688,7 +891,7 @@ function processTransaction() {
   alert('Transaksi Berhasil!');
 }
 
-/* ================= PRINT RECEIPT ================= */
+/* ================= PRINT RECEIPT (WEB/PDF) ================= */
 function printReceipt() {
   const tableNum = document.getElementById('tableNum').value || '-';
   const paid = parseInt(document.getElementById('paidInput').value) || 0;
@@ -753,70 +956,6 @@ function printReceipt() {
   window.print();
 }
 
-/* ================= PRINT BLUETOOTH (RawBT) ================= */
-function printBluetooth() {
-  const tableNum = document.getElementById('tableNum').value || '-';
-  const paid = parseInt(document.getElementById('paidInput').value) || 0;
-  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-  const change = paid - total;
-  const dateNow = new Date().toLocaleString('id-ID');
-
-  // Helper: Text Centering (Asumsi lebar 32 karakter untuk printer 58mm)
-  const WIDTH = 32;
-  const center = (txt) => {
-    const space = Math.max(0, Math.floor((WIDTH - txt.length) / 2));
-    return ' '.repeat(space) + txt;
-  };
-  
-  // Helper: Format Baris (Label ....... Harga)
-  const row = (label, priceVal) => {
-    const pStr = formatRp(priceVal);
-    // Potong label jika terlalu panjang agar harga tetap muat
-    const maxLabel = WIDTH - pStr.length - 1; 
-    let lStr = label.substring(0, maxLabel);
-    const space = Math.max(0, WIDTH - lStr.length - pStr.length);
-    return lStr + ' '.repeat(space) + pStr;
-  };
-
-  let txt = "";
-  // Header
-  txt += center("WARUNG CAKSABAR") + "\n";
-  txt += center("Jl. Brigjen Katamso") + "\n";
-  txt += center("No.88-81") + "\n";
-  txt += "-".repeat(WIDTH) + "\n";
-  txt += `Tgl : ${dateNow}\n`;
-  txt += `Meja: ${tableNum}\n`;
-  txt += "-".repeat(WIDTH) + "\n";
-
-  // Items
-  cart.forEach(item => {
-    // Baris 1: Nama Menu
-    txt += `${item.label}\n`;
-    
-    // Baris 2: Qty x HargaSatuan .... Total
-    const qtyPrice = `   ${item.qty} x ${formatRp(item.price)}`;
-    const lineTotal = formatRp(item.qty * item.price);
-    
-    const space = Math.max(0, WIDTH - qtyPrice.length - lineTotal.length);
-    txt += qtyPrice + ' '.repeat(space) + lineTotal + "\n";
-  });
-
-  txt += "-".repeat(WIDTH) + "\n";
-  
-  // Totals
-  txt += row("TOTAL", total) + "\n";
-  txt += row("BAYAR", paid) + "\n";
-  txt += row("KEMBALI", (change < 0 ? 0 : change)) + "\n";
-  
-  txt += "-".repeat(WIDTH) + "\n";
-  txt += center("Terima Kasih") + "\n";
-  txt += "\n\n"; // Feed kertas
-
-  // Kirim ke RawBT via Intent
-  // Format ini dikenali oleh aplikasi RawBT Driver di Android
-  const base64 = btoa(txt);
-  window.location.href = 'rawbt:base64,' + base64;
-}
 
 /* ================= REPORT PAGE ================= */
 function showReport() {

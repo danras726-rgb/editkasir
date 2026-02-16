@@ -183,6 +183,7 @@
     #receipt-area { display: none; font-family: 'Courier New', Courier, monospace; max-width: 300px; margin: 0 auto; }
     .receipt-header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
     .receipt-title { font-size: 18px; font-weight: bold; margin: 0; }
+    .receipt-logo { display:block; margin:0 auto 10px; max-width:150px; }
     .receipt-info { font-size: 12px; margin-bottom: 4px; }
     .receipt-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
     .receipt-divider { border-top: 1px dashed #000; margin: 10px 0; }
@@ -400,12 +401,86 @@
 <div id="receipt-area"></div>
 
 <script>
+/* ================= HELPER GAMBAR KE HEX (ESCPOS) ================= */
+const EscPosHelper = {
+    // Fungsi konversi Image ke Hex (GS v 0)
+    getImageData: function(imageElement) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Resize jika terlalu lebar (max 380px untuk printer 58mm)
+        let w = imageElement.width;
+        let h = imageElement.height;
+        const MAX_W = 380;
+        
+        if (w > MAX_W) {
+            h = Math.floor(h * (MAX_W / w));
+            w = MAX_W;
+        }
+        
+        // Pastikan width kelipatan 8
+        if (w % 8 !== 0) {
+            w -= (w % 8);
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+        
+        // Draw image (Putih jadi transparent dulu)
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(imageElement, 0, 0, w, h);
+        
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        
+        // Algoritma Monochrome & Packing Bits
+        const result = [];
+        // Header GS v 0 m xL xH yL yH
+        // m=0 (normal), xL/xH width bytes, yL/yH height dots
+        
+        const xBytes = w / 8;
+        const xL = xBytes % 256;
+        const xH = Math.floor(xBytes / 256);
+        const yL = h % 256;
+        const yH = Math.floor(h / 256);
+        
+        // GS v 0
+        result.push(0x1D, 0x76, 0x30, 0, xL, xH, yL, yH);
+        
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < xBytes; x++) {
+                let byte = 0;
+                for (let b = 0; b < 8; b++) {
+                    const px = (x * 8) + b;
+                    const offset = (y * w + px) * 4;
+                    
+                    // Hitung brightness (R+G+B)/3
+                    const r = data[offset];
+                    const g = data[offset + 1];
+                    const bVal = data[offset + 2];
+                    const brightness = (r + g + bVal) / 3;
+                    
+                    // Jika GELAP (pixel < 128), set bit jadi 1
+                    if (brightness < 128) {
+                        byte |= (1 << (7 - b));
+                    }
+                }
+                result.push(byte);
+            }
+        }
+        
+        return new Uint8Array(result);
+    }
+};
+
 /* ================= PRINTER SERVICE (BLUETOOTH) ================= */
 
 const PrinterService = {
     isConnected: false,
     macAddress: null,
     isCordovaReady: false,
+    LOGO_URL: 'logoku.jpg', // NAMA FILE LOGO DI FOLDER WWW
 
     // ESC/POS Commands Helpers
     ESC: {
@@ -415,9 +490,8 @@ const PrinterService = {
         ALIGN_RIGHT: '\x1B\x61\x02',
         BOLD_ON: '\x1B\x45\x01',
         BOLD_OFF: '\x1B\x45\x00',
-        // Font Modes
-        FONT_NORMAL: '\x1B\x21\x00', // Normal
-        FONT_SMALL: '\x1B\x21\x01',  // Small (Font B)
+        FONT_NORMAL: '\x1B\x21\x00',
+        FONT_SMALL: '\x1B\x21\x01',
         FEED: '\x0A'
     },
 
@@ -441,11 +515,8 @@ const PrinterService = {
             return;
         }
 
-        // Cek status Bluetooth
         window.bluetoothSerial.isEnabled(
-            () => {
-                this.scanPaired();
-            },
+            () => { this.scanPaired(); },
             () => {
                 alert("Bluetooth mati. Harap aktifkan Bluetooth di HP Anda terlebih dahulu!");
                 window.bluetoothSerial.enable(
@@ -456,7 +527,6 @@ const PrinterService = {
         );
     },
 
-    // Metode 1: List Paired
     scanPaired: function() {
         document.getElementById('btModal').style.display = 'flex';
         document.getElementById('btLoading').style.display = 'block';
@@ -474,7 +544,6 @@ const PrinterService = {
         );
     },
 
-    // Metode 2: Discovery Unpaired (Paksa Izin Lokasi)
     scanUnpaired: function() {
         document.getElementById('btLoading').style.display = 'block';
         document.getElementById('btLoading').innerText = "Sedang mencari perangkat sekitar (10-15 detik)...";
@@ -521,7 +590,6 @@ const PrinterService = {
 
     connectToDevice: function(address) {
         document.getElementById('btModal').style.display = 'none';
-        
         window.bluetoothSerial.connect(address, () => {
             this.onConnected(address);
         }, (err) => {
@@ -532,7 +600,6 @@ const PrinterService = {
     onConnected: function(addr) {
         this.isConnected = true;
         this.macAddress = addr;
-        
         const btn = document.getElementById('btnConnect');
         btn.classList.remove('disconnected');
         btn.classList.add('connected');
@@ -551,6 +618,7 @@ const PrinterService = {
         alert("Printer Terputus");
     },
 
+    // ===== FUNGSI PRINT DENGAN GAMBAR =====
     printReceipt: function() {
         if (!this.isConnected) {
             alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
@@ -565,10 +633,6 @@ const PrinterService = {
         const dateNow = new Date().toLocaleString('id-ID');
         const rp = (n) => Number(n).toLocaleString('id-ID');
 
-        // Helper Layout Tabel (Width 32 Chars)
-        // Format: Name (17 char left) + Qty(5 char right) + Total (10 char right)
-        // Contoh: "Sate Kambing    10 T    24.000"
-        
         const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
         const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
         
@@ -577,12 +641,16 @@ const PrinterService = {
             return left + " ".repeat(spaces) + right;
         };
 
+        // 1. SIAPKAN TEKS DULU
         let cmds = "";
         
-        // --- HEADER ---
+        // Header Text (Jika gambar gagal)
+        // cmds += this.ESC.RESET + this.ESC.ALIGN_CENTER;
+        
+        // Info Toko (Dibawah Logo)
         cmds += this.ESC.RESET;
         cmds += this.ESC.ALIGN_CENTER;
-        cmds += this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED;
+        // Text Header sudah dihapus diganti LOGO di langkah bawah
         cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
         cmds += "Telp/WA: 0852 3141 3408" + this.ESC.FEED;
         cmds += this.ESC.FEED;
@@ -594,59 +662,34 @@ const PrinterService = {
             cmds += `Catatan: ${note}` + this.ESC.FEED;
         }
         cmds += "--------------------------------" + this.ESC.FEED;
-
-        // --- TABEL ITEM ---
-        // Header (32 Char): ITEM(17) + JML(5) + TOTAL(10)
+        
         cmds += this.ESC.FONT_NORMAL;
         cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
         cmds += "--------------------------------" + this.ESC.FEED;
         
         cart.forEach(item => {
-            // 1. Tentukan Suffix (P/T)
             let suffix = "";
             let lowerId = item.id.toLowerCase();
             let lowerLabel = item.label.toLowerCase();
             
-            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) {
-                suffix = "P"; // Hapus spasi agar kontrol manual lebih mudah
-            } else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) {
-                suffix = "T"; // Hapus spasi
-            }
+            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
+            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
             
-            // 2. Bersihkan Label dari teks (Porsi)/(Tusuk)
             let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
             
-            // 3. Format QTY agar Angka Rata Kanan (Sejajar Angka)
-            // Kolom JML = 5 karakter.
-            // Kita alokasikan 3 char untuk angka (rata kanan) + 2 char untuk suffix (rata kiri)
-            // Contoh Qty 10, P -> " 10 P"
-            // Contoh Qty 2, -  -> "  2  "
-            
             let numStr = item.qty.toString();
-            
-            // Pad Number to 3 chars right aligned: "  1" or " 10" or "100"
             let alignNum = ("   " + numStr).slice(-3);
-            
-            // Pad Suffix to 2 chars left aligned: " P" or "  "
-            // Tambahkan spasi sebelum suffix jika ada suffix
             let alignSuf = suffix ? " " + suffix : "  ";
-            
-            // Gabungkan jadi 5 char
             let qtyFinal = alignNum + alignSuf; 
 
-            // 4. Format Baris Lengkap
             let nameStr = padRight(cleanLabel, 17);
             let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
             
             cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
-            
-            // 5. Tambahkan jarak (FEED) antar item
             cmds += this.ESC.FEED;
         });
 
         cmds += "--------------------------------" + this.ESC.FEED;
-
-        // --- TOTAL ---
         cmds += this.ESC.BOLD_ON;
         cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
         cmds += this.ESC.BOLD_OFF;
@@ -654,18 +697,59 @@ const PrinterService = {
         cmds += pair("Bayar", "Rp " + rp(paid)) + this.ESC.FEED;
         cmds += pair("Kembali", "Rp " + rp(change < 0 ? 0 : change)) + this.ESC.FEED;
 
-        // --- FOOTER ---
         cmds += this.ESC.FEED;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += "Terima Kasih" + this.ESC.FEED;
         cmds += "Simpan struk ini sbg bukti" + this.ESC.FEED;
-        
         cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
-        window.bluetoothSerial.write(cmds, 
-            () => console.log("Print success"), 
-            (err) => alert("Gagal print: " + err)
-        );
+        // 2. PROSES GAMBAR DULU, BARU KIRIM TEXT
+        const img = new Image();
+        img.src = this.LOGO_URL;
+        
+        img.onload = () => {
+            try {
+                // Konversi gambar ke Hex Commands
+                const imgHexBuffer = EscPosHelper.getImageData(img);
+                
+                // Konversi Text cmds ke Uint8Array
+                const textEncoder = new TextEncoder(); // UTF-8 (Support Emoji/Symbol limited)
+                // Note: ESC/POS pure biasanya butuh encoding raw/legacy, tapi TextEncoder cukup untuk ASCII standard
+                // Agar aman, kita pakai raw char code loop untuk string
+                
+                const textBuffer = new Uint8Array(cmds.length);
+                for (let i = 0; i < cmds.length; i++) {
+                    textBuffer[i] = cmds.charCodeAt(i);
+                }
+
+                // Gabungkan Image Buffer + Text Buffer
+                // Kita juga perlu nambahin command align center sebelum gambar
+                const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
+                const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
+                
+                combined.set(centerCmd, 0);
+                combined.set(imgHexBuffer, centerCmd.length);
+                combined.set(textBuffer, centerCmd.length + imgHexBuffer.length);
+
+                window.bluetoothSerial.write(combined.buffer, 
+                    () => console.log("Print Img+Text Success"), 
+                    (err) => alert("Gagal Print: " + err)
+                );
+            } catch (e) {
+                alert("Gagal memproses gambar: " + e);
+                // Fallback print text only
+                window.bluetoothSerial.write(cmds, null, null);
+            }
+        };
+
+        img.onerror = () => {
+            // Jika gambar tidak ketemu, print teks biasa dengan header TEXT
+            const backupHeader = this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED + cmds;
+            window.bluetoothSerial.write(backupHeader, 
+                () => alert("Logo tidak ditemukan, mencetak teks standar."), 
+                (err) => alert("Gagal print: " + err)
+            );
+        };
     }
 };
 
@@ -1023,7 +1107,7 @@ function printReceipt() {
 
   const receiptHtml = `
     <div class="receipt-header">
-      <div class="receipt-title">WARUNG CAKSABAR</div>
+      <img src="logoku.jpg" alt="Logo" class="receipt-logo">
       <div class="receipt-info">Jl. Brigjen Katamso No.88-81</div>
       <div class="receipt-info">Telp/WA: 0852 3141 3408</div>
       <div class="receipt-info" style="margin-top:8px">${dateNow}</div>

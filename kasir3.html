@@ -173,23 +173,6 @@
     .slide-up { animation: slideUp 0.3s ease-out forwards; }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-    /* PRINT STYLES */
-    @media print {
-      body * { visibility: hidden; }
-      #receipt-area, #receipt-area * { visibility: visible; }
-      #receipt-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; background: white; padding: 0; color: black; }
-      #paymentModal, .app, #splash-screen { display: none !important; }
-    }
-    #receipt-area { display: none; font-family: 'Courier New', Courier, monospace; max-width: 300px; margin: 0 auto; }
-    .receipt-header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
-    .receipt-title { font-size: 18px; font-weight: bold; margin: 0; }
-    .receipt-logo { display:block; margin:0 auto 10px; max-width:150px; }
-    .receipt-info { font-size: 12px; margin-bottom: 4px; }
-    .receipt-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
-    .receipt-divider { border-top: 1px dashed #000; margin: 10px 0; }
-    .receipt-total { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin: 4px 0; }
-    .receipt-footer { text-align: center; margin-top: 20px; font-size: 10px; }
-    
     /* === SPLASH SCREEN === */
     #splash-screen { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease-out, visibility 0.6s; }
     .splash-logo-container { width: 100px; height: 100px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(8, 145, 178, 0.3); margin-bottom: 24px; animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
@@ -254,6 +237,7 @@
           <span class="code-tag">rb</span> = 000 (Contoh: 15rb = 15.000)
         </div>
         <button class="btn" style="margin-top:12px;padding:12px; font-size: 14px;" onclick="parseAI()">Masukan ke Keranjang</button>
+        <div id="aiFeedback" style="margin-top: 8px; font-size: 13px; font-weight: 600; text-align: center; display: none; padding: 8px; border-radius: 8px;"></div>
       </div>
 
       <div class="section-title">Makanan</div>
@@ -370,12 +354,30 @@
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-bottom:12px">
-      <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="printReceipt()">🖨️ Web/PDF</button>
-      <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="PrinterService.printReceipt()">🔵 Print Struk</button>
+      <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="PrinterService.printShortReceipt()">🖨️ Print Pesanan</button>
+      <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="PrinterService.printReceipt()">🔵 Print Struk Full</button>
     </div>
     <button class="btn" style="background: var(--green); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="processTransaction()">✅ Selesai</button>
     
     <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('paymentModal')">Batal</button>
+  </div>
+</div>
+
+<!-- MODAL HARGA MANUAL (KHUSUS) -->
+<div id="customPriceModal" class="modal-overlay">
+  <div class="modal-card">
+    <h3 id="customPriceTitle" style="margin:0 0 4px;text-align:center;font-size:20px; color: #1e293b;">Harga Manual</h3>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px">Masukkan harga item ini</div>
+    
+    <input type="number" id="customPriceInput" class="money" placeholder="Contoh: 150000">
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
+        <button class="btn secondary" style="margin:0; padding:12px;" onclick="addNolCustom('000')">+ 000</button>
+        <button class="btn secondary" style="margin:0; padding:12px;" onclick="addNolCustom('0000')">+ 0000</button>
+    </div>
+
+    <button class="btn" onclick="confirmCustomPrice()">Masukan Keranjang</button>
+    <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('customPriceModal')">Batal</button>
   </div>
 </div>
 
@@ -396,9 +398,6 @@
     <button class="btn secondary" style="margin-top:24px" onclick="closeReport()">Kembali ke Kasir</button>
   </div>
 </div>
-
-<!-- CONTAINER STRUK (UNTUK PDF/WEB PRINT) -->
-<div id="receipt-area"></div>
 
 <script>
 /* ================= HELPER GAMBAR KE HEX (ESCPOS) ================= */
@@ -750,6 +749,79 @@ const PrinterService = {
                 (err) => alert("Gagal print: " + err)
             );
         };
+    },
+
+    // ===== FUNGSI PRINT SINGKAT (PESANAN/DAPUR) =====
+    printShortReceipt: function() {
+        if (!this.isConnected) {
+            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
+            return;
+        }
+
+        const tableNum = document.getElementById('tableNum').value || '-';
+        const note = document.getElementById('orderNote').value || '-';
+        const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+        const dateNow = new Date().toLocaleString('id-ID');
+        const rp = (n) => Number(n).toLocaleString('id-ID');
+
+        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
+        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
+        
+        const pair = (left, right, width = 32) => {
+            const spaces = Math.max(0, width - left.length - right.length);
+            return left + " ".repeat(spaces) + right;
+        };
+
+        let cmds = "";
+        
+        // Header Singkat (Hanya Meja & Waktu)
+        cmds += this.ESC.RESET;
+        cmds += this.ESC.ALIGN_LEFT;
+        cmds += `${dateNow}` + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
+        if(note !== '-') {
+            cmds += `Catatan: ${note}` + this.ESC.FEED;
+        }
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        cmds += this.ESC.FONT_NORMAL;
+        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        cart.forEach(item => {
+            let suffix = "";
+            let lowerId = item.id.toLowerCase();
+            let lowerLabel = item.label.toLowerCase();
+            
+            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
+            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
+            
+            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
+            
+            let numStr = item.qty.toString();
+            let alignNum = ("   " + numStr).slice(-3);
+            let alignSuf = suffix ? " " + suffix : "  ";
+            let qtyFinal = alignNum + alignSuf; 
+
+            let nameStr = padRight(cleanLabel, 17);
+            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
+            
+            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
+            cmds += this.ESC.FEED; // Jarak antar item
+        });
+
+        cmds += "--------------------------------" + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON;
+        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
+        cmds += this.ESC.BOLD_OFF;
+
+        // Potong kertas (spasi beberapa baris)
+        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
+
+        window.bluetoothSerial.write(cmds, 
+            () => console.log("Print Pesanan Success"), 
+            (err) => alert("Gagal print pesanan: " + err)
+        );
     }
 };
 
@@ -773,6 +845,9 @@ const DATA_MENU = [
 
   // GULE
   { id: 'gule', keywords: ['gule', 'gulai'], label: 'Gule (Porsi)', price: 24000, category: 'food', visible: true, isFlexible: true },
+  
+  // KEPALA KAMBING (HARGA MANUAL)
+  { id: 'kepala_kambing', keywords: ['kepala kambing', 'ndas', 'kepala'], label: 'Kepala Kambing', price: 0, category: 'food', visible: true, needsPriceInput: true, isFlexible: true },
   
   // MAKANAN LAIN
   { id: 'nasi_gule', keywords: ['nasi gule', 'nasi gulai'], label: 'Nasi Gule', price: 14000, category: 'food', visible: true },
@@ -843,6 +918,17 @@ function updateMenuGridUI() {
   DATA_MENU.forEach(item => {
     const controlContainer = document.getElementById(`controls_${item.id}`);
     if(!controlContainer) return;
+
+    // JIKA MENU BUTUH HARGA MANUAL (Contoh: Kepala Kambing)
+    if (item.needsPriceInput) {
+        controlContainer.innerHTML = `
+           <button class="add-btn-simple" style="background:#f59e0b" onclick="openCustomPriceModal('${item.id}')">
+              <span>Isi Harga</span>
+              <span style="background:rgba(255,255,255,0.2); border-radius:4px; padding:0 4px; font-size:10px">+</span>
+           </button>
+        `;
+        return; // Lewati logika keranjang standar di bawah
+    }
 
     // Cari jumlah item ini di keranjang (Hanya yang harganya SESUAI standar)
     const cartItem = cart.find(c => c.id === item.id && c.price === item.price);
@@ -939,6 +1025,41 @@ function resetCart() {
   document.getElementById('orderNote').value = '';
 }
 
+/* ================= CUSTOM PRICE LOGIC ================= */
+let currentCustomItemId = null;
+
+function openCustomPriceModal(itemId) {
+    currentCustomItemId = itemId;
+    const item = DATA_MENU.find(i => i.id === itemId);
+    document.getElementById('customPriceTitle').textContent = `Harga ${item.label}`;
+    document.getElementById('customPriceInput').value = '';
+    document.getElementById('customPriceModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('customPriceInput').focus(), 100);
+}
+
+function addNolCustom(val) {
+    const input = document.getElementById('customPriceInput');
+    input.value = input.value + val;
+    input.focus();
+}
+
+function confirmCustomPrice() {
+    if (!currentCustomItemId) return;
+    const priceVal = parseInt(document.getElementById('customPriceInput').value);
+    
+    if (!priceVal || priceVal <= 0) {
+        alert("Masukkan nominal harga yang valid!");
+        return;
+    }
+    
+    const item = DATA_MENU.find(i => i.id === currentCustomItemId);
+    if (item) {
+        // Masukkan ke keranjang dengan harga kustom
+        addToCart(item, 1, priceVal);
+    }
+    closeModal('customPriceModal');
+}
+
 /* ================= AI PARSER LOGIC ================= */
 function parseAI() {
   let text = document.getElementById('aiInput').value.toLowerCase();
@@ -950,9 +1071,15 @@ function parseAI() {
   text = text.replace(/\bg\b/g, 'gule');
   text = text.replace(/\bn\b/g, 'nasi'); // Penambahan Kode N = Nasi
 
-  if (!text.trim()) return;
+  const feedbackEl = document.getElementById('aiFeedback');
+
+  if (!text.trim()) {
+      feedbackEl.style.display = 'none';
+      return;
+  }
 
   const orders = text.split(/[\n,]+/);
+  let itemsAdded = 0; // Variabel untuk melacak item yang berhasil ditambahkan
 
   orders.forEach(raw => {
     const line = raw.trim();
@@ -986,18 +1113,43 @@ function parseAI() {
     if (bestMatch) {
       if (customPrice && bestMatch.isFlexible) {
         addToCart(bestMatch, 1, customPrice); 
+        itemsAdded++;
       } 
       else if (customPrice && !bestMatch.isFlexible) {
          let calculatedQty = Math.floor(customPrice / bestMatch.price);
-         if(calculatedQty > 0) addToCart(bestMatch, calculatedQty);
+         if(calculatedQty > 0) {
+             addToCart(bestMatch, calculatedQty);
+             itemsAdded++;
+         }
       }
       else {
-        addToCart(bestMatch, qty);
+        if (bestMatch.needsPriceInput && !customPrice) {
+            // Jika AI memanggil Kepala Kambing tapi tidak ada nominal harga ("kepala kambing 1")
+            // Abaikan agar tidak masuk keranjang dengan harga 0
+        } else {
+            addToCart(bestMatch, qty);
+            itemsAdded++;
+        }
       }
     }
   });
 
-  document.getElementById('aiInput').value = '';
+  if (itemsAdded > 0) {
+      // BERHASIL MASUK KERANJANG
+      document.getElementById('aiInput').value = '';
+      feedbackEl.textContent = '✅ Berhasil masuk keranjang!';
+      feedbackEl.style.backgroundColor = '#ecfdf5';
+      feedbackEl.style.color = '#059669';
+      feedbackEl.style.display = 'block';
+      setTimeout(() => { feedbackEl.style.display = 'none'; }, 3000); // Pesan hilang setelah 3 detik
+  } else {
+      // GAGAL
+      feedbackEl.textContent = '❌ Gagal! Cek ketikan atau nama menu.';
+      feedbackEl.style.backgroundColor = '#fef2f2';
+      feedbackEl.style.color = '#dc2626';
+      feedbackEl.style.display = 'block';
+      // Teks tidak dihapus agar bisa diedit kembali oleh pengguna
+  }
 }
 
 /* ================= CHECKOUT & TRANSACTION ================= */
@@ -1059,87 +1211,6 @@ function processTransaction() {
   updateStats();
   renderHistory();
   alert('Transaksi Berhasil!');
-}
-
-/* ================= PRINT RECEIPT (WEB/PDF) ================= */
-function printReceipt() {
-  const tableNum = document.getElementById('tableNum').value || '-';
-  const note = document.getElementById('orderNote').value || '-';
-  const paid = parseInt(document.getElementById('paidInput').value) || 0;
-  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-  const change = paid - total;
-  const dateNow = new Date().toLocaleString('id-ID');
-
-  let itemsHtml = `
-    <table style="width:100%; border-collapse:collapse; font-size:12px; margin-bottom:10px">
-      <tr style="border-bottom:1px dashed #000">
-        <th style="text-align:left; padding:4px 0">Menu</th>
-        <th style="text-align:center; padding:4px 0; width:40px">Jml</th>
-        <th style="text-align:right; padding:4px 0">Total</th>
-      </tr>
-  `;
-
-  cart.forEach(item => {
-    // 1. Tentukan Suffix (P/T)
-    let suffix = "";
-    let lowerId = item.id.toLowerCase();
-    let lowerLabel = item.label.toLowerCase();
-    
-    if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) {
-        suffix = " P";
-    } else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) {
-        suffix = " T";
-    }
-
-    // Hilangkan teks (Porsi) dan (Tusuk) di struk Web/PDF juga
-    let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
-    
-    itemsHtml += `
-      <tr>
-        <td style="padding:4px 0; vertical-align:top">${cleanLabel} <br><small style="color:#555">@${formatRp(item.price)}</small></td>
-        <td style="text-align:center; padding:4px 0; vertical-align:top">${item.qty}${suffix}</td>
-        <td style="text-align:right; padding:4px 0; vertical-align:top">${formatRp(item.price * item.qty)}</td>
-      </tr>
-    `;
-  });
-  
-  itemsHtml += `</table>`;
-
-  const receiptHtml = `
-    <div class="receipt-header">
-      <img src="logoku.jpg" alt="Logo" class="receipt-logo">
-      <div class="receipt-info">Jl. Brigjen Katamso No.88-81</div>
-      <div class="receipt-info">Telp/WA: 0852 3141 3408</div>
-      <div class="receipt-info" style="margin-top:8px">${dateNow}</div>
-      <div class="receipt-info" style="font-weight:bold; font-size:14px">MEJA: ${tableNum}</div>
-      ${note !== '-' ? `<div class="receipt-info" style="font-style:italic">Catatan: ${note}</div>` : ''}
-    </div>
-    
-    <div>${itemsHtml}</div>
-    
-    <div class="receipt-divider"></div>
-    
-    <div class="receipt-total">
-      <span>TOTAL</span>
-      <span>${formatRp(total)}</span>
-    </div>
-    <div class="receipt-item" style="margin-top:8px">
-      <span>Bayar (Tunai)</span>
-      <span>${formatRp(paid)}</span>
-    </div>
-    <div class="receipt-item">
-      <span>Kembali</span>
-      <span>${formatRp(change < 0 ? 0 : change)}</span>
-    </div>
-    
-    <div class="receipt-footer">
-      <div>Terima Kasih atas Kunjungan Anda</div>
-      <div>Simpan struk ini sebagai bukti pembayaran</div>
-    </div>
-  `;
-
-  document.getElementById('receipt-area').innerHTML = receiptHtml;
-  window.print();
 }
 
 

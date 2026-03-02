@@ -531,16 +531,13 @@
     <button class="btn secondary" style="margin-top:24px" onclick="closeReport()">Kembali ke Kasir</button>
   </div>
 </div>
-
 <script>
 /* ================= HELPER GAMBAR KE HEX (ESCPOS) ================= */
 const EscPosHelper = {
-    // Fungsi konversi Image ke Hex (GS v 0)
     getImageData: function(imageElement) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Resize jika terlalu lebar (max 380px untuk printer 58mm)
         let w = imageElement.width;
         let h = imageElement.height;
         const MAX_W = 380;
@@ -550,15 +547,11 @@ const EscPosHelper = {
             w = MAX_W;
         }
         
-        // Pastikan width kelipatan 8
-        if (w % 8 !== 0) {
-            w -= (w % 8);
-        }
+        if (w % 8 !== 0) w -= (w % 8);
 
         canvas.width = w;
         canvas.height = h;
         
-        // Draw image (Putih jadi transparent dulu)
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, w, h);
         ctx.drawImage(imageElement, 0, 0, w, h);
@@ -566,18 +559,13 @@ const EscPosHelper = {
         const imgData = ctx.getImageData(0, 0, w, h);
         const data = imgData.data;
         
-        // Algoritma Monochrome & Packing Bits
         const result = [];
-        // Header GS v 0 m xL xH yL yH
-        // m=0 (normal), xL/xH width bytes, yL/yH height dots
-        
         const xBytes = w / 8;
         const xL = xBytes % 256;
         const xH = Math.floor(xBytes / 256);
         const yL = h % 256;
         const yH = Math.floor(h / 256);
         
-        // GS v 0
         result.push(0x1D, 0x76, 0x30, 0, xL, xH, yL, yH);
         
         for (let y = 0; y < h; y++) {
@@ -586,35 +574,26 @@ const EscPosHelper = {
                 for (let b = 0; b < 8; b++) {
                     const px = (x * 8) + b;
                     const offset = (y * w + px) * 4;
-                    
-                    // Hitung brightness (R+G+B)/3
                     const r = data[offset];
                     const g = data[offset + 1];
                     const bVal = data[offset + 2];
                     const brightness = (r + g + bVal) / 3;
-                    
-                    // Jika GELAP (pixel < 128), set bit jadi 1
-                    if (brightness < 128) {
-                        byte |= (1 << (7 - b));
-                    }
+                    if (brightness < 128) byte |= (1 << (7 - b));
                 }
                 result.push(byte);
             }
         }
-        
         return new Uint8Array(result);
     }
 };
 
 /* ================= PRINTER SERVICE (BLUETOOTH) ================= */
-
 const PrinterService = {
     isConnected: false,
     macAddress: null,
     isCordovaReady: false,
-    LOGO_URL: 'logoku.jpg', // NAMA FILE LOGO DI FOLDER WWW
+    LOGO_URL: 'logoku.jpg', 
 
-    // ESC/POS Commands Helpers
     ESC: {
         RESET: '\x1B\x40',
         ALIGN_LEFT: '\x1B\x61\x00',
@@ -631,14 +610,28 @@ const PrinterService = {
         document.addEventListener('deviceready', () => {
             console.log("Cordova Device Ready");
             this.isCordovaReady = true;
+
+            // INISIALISASI BACKGROUND MODE AGAR ALARM JALAN DI LATAR BELAKANG
+            if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.backgroundMode) {
+                cordova.plugins.backgroundMode.enable();
+                // Opsional: set notifikasi menetap saat aplikasi berjalan di background
+                cordova.plugins.backgroundMode.setDefaults({
+                    title: "Kasir CAKSABAR Aktif",
+                    text: "Memantau pesanan dan alarm pre-order...",
+                    resume: true,
+                    hidden: false
+                });
+                // Matikan optimasi webview agar timer setInterval tidak melambat
+                cordova.plugins.backgroundMode.on('activate', function() {
+                    cordova.plugins.backgroundMode.disableWebViewOptimizations();
+                });
+            }
         }, false);
     },
 
     connect: function() {
         if (this.isConnected) {
-            if(confirm('Putuskan koneksi printer?')) {
-                this.disconnect();
-            }
+            if(confirm('Putuskan koneksi printer?')) this.disconnect();
             return;
         }
 
@@ -705,10 +698,7 @@ const PrinterService = {
             return;
         }
 
-        const uniqueDevices = Array.from(new Set(devices.map(a => a.id)))
-            .map(id => {
-            return devices.find(a => a.id === id)
-        });
+        const uniqueDevices = Array.from(new Set(devices.map(a => a.id))).map(id => devices.find(a => a.id === id));
 
         uniqueDevices.forEach(d => {
             const item = document.createElement('div');
@@ -750,7 +740,6 @@ const PrinterService = {
         alert("Printer Terputus");
     },
 
-    // ===== FUNGSI PRINT DENGAN GAMBAR =====
     printReceipt: function() {
         if (!this.isConnected) {
             alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
@@ -773,10 +762,8 @@ const PrinterService = {
             return left + " ".repeat(spaces) + right;
         };
 
-        // 1. SIAPKAN TEKS DULU
         let cmds = "";
         
-        // Info Toko (Dibawah Logo)
         cmds += this.ESC.RESET;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
@@ -786,9 +773,7 @@ const PrinterService = {
         cmds += this.ESC.ALIGN_LEFT;
         cmds += `${dateNow}` + this.ESC.FEED;
         cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
-        if(note !== '-') {
-            cmds += `Catatan: ${note}` + this.ESC.FEED;
-        }
+        if(note !== '-') cmds += `Catatan: ${note}` + this.ESC.FEED;
         cmds += "--------------------------------" + this.ESC.FEED;
         
         cmds += this.ESC.FONT_NORMAL;
@@ -828,25 +813,19 @@ const PrinterService = {
         cmds += this.ESC.FEED;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += "Terima Kasih" + this.ESC.FEED;
+        cmds += "Kunjungi: menucaksabar.my.id" + this.ESC.FEED;
         cmds += "Simpan struk ini sbg bukti" + this.ESC.FEED;
         cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
-        // 2. PROSES GAMBAR DULU, BARU KIRIM TEXT
         const img = new Image();
         img.src = this.LOGO_URL;
         
         img.onload = () => {
             try {
-                // Konversi gambar ke Hex Commands
                 const imgHexBuffer = EscPosHelper.getImageData(img);
-                
-                // Konversi Text cmds ke Uint8Array
                 const textBuffer = new Uint8Array(cmds.length);
-                for (let i = 0; i < cmds.length; i++) {
-                    textBuffer[i] = cmds.charCodeAt(i);
-                }
+                for (let i = 0; i < cmds.length; i++) textBuffer[i] = cmds.charCodeAt(i);
 
-                // Gabungkan Image Buffer + Text Buffer
                 const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
                 const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
                 
@@ -873,7 +852,6 @@ const PrinterService = {
         };
     },
 
-    // ===== FUNGSI PRINT SINGKAT (PESANAN/DAPUR) =====
     printShortReceipt: function() {
         if (!this.isConnected) {
             alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
@@ -896,14 +874,11 @@ const PrinterService = {
 
         let cmds = "";
         
-        // Header Singkat (Hanya Meja & Waktu)
         cmds += this.ESC.RESET;
         cmds += this.ESC.ALIGN_LEFT;
         cmds += `${dateNow}` + this.ESC.FEED;
         cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
-        if(note !== '-') {
-            cmds += `Catatan: ${note}` + this.ESC.FEED;
-        }
+        if(note !== '-') cmds += `Catatan: ${note}` + this.ESC.FEED;
         cmds += "--------------------------------" + this.ESC.FEED;
         
         cmds += this.ESC.FONT_NORMAL;
@@ -919,7 +894,6 @@ const PrinterService = {
             else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
             
             let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
-            
             let numStr = item.qty.toString();
             let alignNum = ("   " + numStr).slice(-3);
             let alignSuf = suffix ? " " + suffix : "  ";
@@ -929,15 +903,13 @@ const PrinterService = {
             let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
             
             cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
-            cmds += this.ESC.FEED; // Jarak antar item
+            cmds += this.ESC.FEED; 
         });
 
         cmds += "--------------------------------" + this.ESC.FEED;
         cmds += this.ESC.BOLD_ON;
         cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
         cmds += this.ESC.BOLD_OFF;
-
-        // Potong kertas (spasi beberapa baris)
         cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
         window.bluetoothSerial.write(cmds, 
@@ -946,7 +918,6 @@ const PrinterService = {
         );
     },
 
-    // ===== FUNGSI PRINT STRUK PRE ORDER =====
     printPreOrder: function(po) {
         if (!this.isConnected) {
             alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
@@ -965,7 +936,6 @@ const PrinterService = {
 
         let cmds = "";
         
-        // Info Toko (Dibawah Logo)
         cmds += this.ESC.RESET;
         cmds += this.ESC.ALIGN_CENTER;
         cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
@@ -980,9 +950,7 @@ const PrinterService = {
         cmds += `Tanggal: ${new Date().toLocaleString('id-ID')}` + this.ESC.FEED;
         cmds += this.ESC.BOLD_ON + `NAMA  : ${po.name}` + this.ESC.FEED;
         cmds += `AMBIL : ${po.time}` + this.ESC.BOLD_OFF + this.ESC.FEED;
-        if(po.note && po.note !== '-') {
-            cmds += `Catatan: ${po.note}` + this.ESC.FEED;
-        }
+        if(po.note && po.note !== '-') cmds += `Catatan: ${po.note}` + this.ESC.FEED;
         cmds += "--------------------------------" + this.ESC.FEED;
         
         cmds += this.ESC.FONT_NORMAL;
@@ -998,7 +966,6 @@ const PrinterService = {
             else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
             
             let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
-            
             let numStr = item.qty.toString();
             let alignNum = ("   " + numStr).slice(-3);
             let alignSuf = suffix ? " " + suffix : "  ";
@@ -1020,9 +987,9 @@ const PrinterService = {
         cmds += this.ESC.ALIGN_CENTER;
         cmds += "Harap bawa struk ini sbg" + this.ESC.FEED;
         cmds += "bukti pengambilan Pre-Order" + this.ESC.FEED;
+        cmds += "menucaksabar.my.id" + this.ESC.FEED;
         cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
-        // Image Print Logic
         const img = new Image();
         img.src = this.LOGO_URL;
         
@@ -1030,9 +997,7 @@ const PrinterService = {
             try {
                 const imgHexBuffer = EscPosHelper.getImageData(img);
                 const textBuffer = new Uint8Array(cmds.length);
-                for (let i = 0; i < cmds.length; i++) {
-                    textBuffer[i] = cmds.charCodeAt(i);
-                }
+                for (let i = 0; i < cmds.length; i++) textBuffer[i] = cmds.charCodeAt(i);
 
                 const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
                 const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
@@ -1061,36 +1026,18 @@ const PrinterService = {
     }
 };
 
-/* ================= END PRINTER SERVICE ================= */
-
-/**
- * DATA MENU & KONFIGURASI HARGA (DENGAN NAMA FILE GAMBAR WEBP)
- */
 const DATA_MENU = [
-  // SATE KAMBING
   { id: 'sk_tusuk', img: '', keywords: ['sate kambing', 'kambing'], label: 'Sate Kambing (Tusuk)', price: 2400, category: 'food', visible: false },
   { id: 'sk_porsi', img: 'sk_porsi.webp', keywords: ['sate kambing porsi'], label: 'Sate Kambing (Porsi)', price: 24000, category: 'food', visible: true },
-  
-  // SATE KAMBING POLOS
   { id: 'sk_nl_tusuk', img: '', keywords: ['kambing tanpa lemak', 'no lemak', 'sk polos', 'kambing tl'], label: 'Sate Kambing TL (Tusuk)', price: 2600, category: 'food', visible: false },
   { id: 'sk_nl_porsi', img: 'sk_nl_porsi.webp', keywords: ['kambing tanpa lemak porsi'], label: 'Sate Kambing TL (Porsi)', price: 26000, category: 'food', visible: true },
-
-  // SATE AYAM
   { id: 'sa_tusuk', img: '', keywords: ['sate ayam', 'ayam'], label: 'Sate Ayam (Tusuk)', price: 1200, category: 'food', visible: false },
   { id: 'sa_porsi', img: 'sa_porsi.webp', keywords: ['sate ayam porsi'], label: 'Sate Ayam (Porsi)', price: 12000, category: 'food', visible: true },
-
-  // GULE
   { id: 'gule', img: 'gule.webp', keywords: ['gule', 'gulai'], label: 'Gule (Porsi)', price: 24000, category: 'food', visible: true, isFlexible: true },
-  
-  // KEPALA KAMBING (HARGA MANUAL)
   { id: 'kepala_kambing', img: 'kepala_kambing.webp', keywords: ['kepala kambing', 'ndas', 'kepala'], label: 'Kepala Kambing', price: 0, category: 'food', visible: true, needsPriceInput: true, isFlexible: true },
-  
-  // MAKANAN LAIN
   { id: 'nasi_gule', img: 'nasi_gule.webp', keywords: ['nasi gule', 'nasi gulai'], label: 'Nasi Gule', price: 14000, category: 'food', visible: true },
   { id: 'nasi', img: 'nasi.webp', keywords: ['nasi', 'sego'], label: 'Nasi Putih', price: 3000, category: 'food', visible: true, isFlexible: true },
   { id: 'kerupuk', img: 'kerupuk.webp', keywords: ['kerupuk', 'rupuk'], label: 'Kerupuk', price: 1000, category: 'food', visible: true },
-
-  // MINUMAN
   { id: 'es_teh', img: 'es_teh.webp', keywords: ['es teh'], label: 'Es Teh', price: 3000, category: 'drink', visible: true },
   { id: 'es_jeruk', img: 'es_jeruk.webp', keywords: ['es jeruk'], label: 'Es Jeruk', price: 3000, category: 'drink', visible: true },
   { id: 'teh_anget', img: 'teh_anget.webp', keywords: ['teh anget', 'teh hangat'], label: 'Teh Anget', price: 3000, category: 'drink', visible: true },
@@ -1102,11 +1049,8 @@ let transactions = JSON.parse(localStorage.getItem('trx_cak_sabar') || '[]');
 let preOrders = JSON.parse(localStorage.getItem('po_cak_sabar') || '[]');
 const formatRp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
 
-/* ================= INIT ================= */
 function init() {
-  // Init Printer Service (Listen Device Ready)
   PrinterService.init();
-
   renderMenuGrid();
   updateStats();
   renderHistory();
@@ -1119,18 +1063,14 @@ function init() {
   }, 3000); 
 }
 
-/* ================= PRE ORDER LOGIC ================= */
 function showPreOrderModal() {
     if (cart.length === 0) return alert('Keranjang masih kosong!');
     document.getElementById('poNameInput').value = '';
-    
-    // Set waktu default 1 jam dari sekarang
     const now = new Date();
     now.setHours(now.getHours() + 1);
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
     document.getElementById('poTimeInput').value = `${hh}:${mm}`;
-    
     document.getElementById('preOrderModal').style.display = 'flex';
 }
 
@@ -1150,9 +1090,9 @@ function savePreOrder() {
         note: note,
         items: [...cart],
         total: total,
-        alarm30Done: false, // Flag untuk alarm 30 menit
-        alarm15Done: false, // Flag untuk alarm 15 menit
-        alarmNowDone: false // Flag untuk alarm saat ini
+        alarm30Done: false,
+        alarm15Done: false,
+        alarmNowDone: false
     };
 
     preOrders.push(po);
@@ -1235,7 +1175,6 @@ function processPreOrder(id) {
     if (cart.length > 0) {
         if (!confirm('Keranjang saat ini tidak kosong. Menarik Pre Order akan menimpa keranjang. Lanjutkan?')) return;
     }
-
     const poIndex = preOrders.findIndex(p => p.id === id);
     if (poIndex === -1) return;
     const po = preOrders[poIndex];
@@ -1260,10 +1199,9 @@ function deletePreOrder(id) {
     updatePOBadge();
 }
 
-let alarmInterval; // Variabel untuk menyimpan loop suara alarm
+let alarmInterval; 
 
 function startAlarmChecker() {
-    // Cek waktu setiap 15 detik agar lebih responsif
     setInterval(() => {
         checkAlarms();
     }, 15000);
@@ -1272,38 +1210,32 @@ function startAlarmChecker() {
 function checkAlarms() {
     const today = new Date().toLocaleDateString('id-ID');
     const now = new Date();
-
     let needsSave = false;
 
     preOrders.forEach(po => {
         if (po.date !== today) return;
 
         const [poHour, poMin] = po.time.split(':').map(Number);
-        
         const poDate = new Date();
         poDate.setHours(poHour, poMin, 0, 0);
 
         const diffMs = poDate - now;
         const diffMins = Math.floor(diffMs / 60000);
 
-        // Inisialisasi properti jika data lama belum memilikinya
         if(po.alarm30Done === undefined) po.alarm30Done = false;
         if(po.alarm15Done === undefined) po.alarm15Done = false;
         if(po.alarmNowDone === undefined) po.alarmNowDone = false;
 
-        // ALARM 1: 30 Menit Sebelumnya
         if (diffMins <= 30 && diffMins > 15 && !po.alarm30Done) {
             po.alarm30Done = true;
             needsSave = true;
             triggerAlarmCall(`Tiga puluh menit lagi! Waktu pengambilan pesanan atas nama ${po.name}.`);
         }
-        // ALARM 2: 15 Menit Sebelumnya
         else if (diffMins <= 15 && diffMins > 0 && !po.alarm15Done) {
             po.alarm15Done = true;
             needsSave = true;
             triggerAlarmCall(`Lima belas menit lagi! Harap persiapkan pesanan atas nama ${po.name}.`);
         }
-        // ALARM 3: Waktunya tiba (0 menit hingga telat 30 menit)
         else if (diffMins <= 0 && diffMins >= -30 && !po.alarmNowDone) {
             po.alarmNowDone = true;
             needsSave = true;
@@ -1317,34 +1249,25 @@ function checkAlarms() {
 }
 
 function triggerAlarmCall(text) {
-    console.log("ALARM TRIGGERED:", text);
-    
-    // Tampilkan Layar Panggilan Penuh
     document.getElementById('alarmCallText').innerText = text;
     document.getElementById('alarmCallModal').style.display = 'flex';
     
-    // Getar jika HP mendukung (Pola: Getar panjang)
-    if (navigator.vibrate) {
-        navigator.vibrate([1000, 500, 1000, 500, 1000]);
-    }
+    if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500, 1000]);
 
-    // Mainkan suara pertama kali
     playTTS(text);
 
-    // Ulangi suara dan getaran setiap 6 detik sampai ditutup
-    clearInterval(alarmInterval); // Hapus interval lama jika ada
+    clearInterval(alarmInterval);
     alarmInterval = setInterval(() => {
         playTTS(text);
         if (navigator.vibrate) navigator.vibrate([1000, 500]);
     }, 6000);
 
-    // Tampilkan notifikasi push jika menggunakan Cordova
     if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
         cordova.plugins.notification.local.schedule({
             title: 'ALARM PRE-ORDER',
             text: text,
             foreground: true,
-            wakeup: true // Mencoba membangunkan layar HP
+            wakeup: true 
         });
     }
 }
@@ -1357,7 +1280,7 @@ function playTTS(text) {
             rate: 1.0
         });
     } else if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // Hentikan antrean suara sebelumnya
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'id-ID';
         utterance.rate = 0.9;
@@ -1366,42 +1289,25 @@ function playTTS(text) {
 }
 
 function dismissAlarmCall() {
-    // Sembunyikan Layar Panggilan
     document.getElementById('alarmCallModal').style.display = 'none';
-    
-    // Matikan pengulangan
     clearInterval(alarmInterval);
-    
-    // Matikan suara yang sedang berjalan
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-    }
-    
-    // Matikan getaran
-    if (navigator.vibrate) {
-        navigator.vibrate(0); 
-    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (navigator.vibrate) navigator.vibrate(0); 
 }
 
-/* ================= RENDER MENU GRID ================= */
 function renderMenuGrid() {
   const foodContainer = document.getElementById('foodGrid');
   const drinkContainer = document.getElementById('drinkGrid');
-
-  // Bersihkan container terlebih dahulu
   foodContainer.innerHTML = '';
   drinkContainer.innerHTML = '';
 
   DATA_MENU.forEach(item => {
     if (!item.visible) return;
-
     const el = document.createElement('div');
     el.className = 'menu-item';
-    el.id = `item_${item.id}`; // Tambahkan ID untuk manipulasi CSS Slide Down
-    // Event klik diletakkan pada kontainer agar bisa di-tap di mana saja
+    el.id = `item_${item.id}`;
     el.onclick = (e) => handleCardClick(item.id, e);
     
-    // SVG Placeholder yang proporsional 4:3
     const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#e2e8f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#94a3b8">Foto</text></svg>`;
     const placeholderImg = `data:image/svg+xml;utf8,${encodeURIComponent(svgStr)}`;
 
@@ -1411,35 +1317,25 @@ function renderMenuGrid() {
          <div class="m-name">${item.label}</div>
          <div class="m-price-sm">${item.price > 0 ? formatRp(item.price) : '<span style="color:#f59e0b">Manual</span>'}</div>
       </div>
-      <div class="menu-controls-wrapper" id="controls_${item.id}">
-         <!-- Tombol +/- akan terinjeksi di sini dan meluncur ke bawah -->
-      </div>
+      <div class="menu-controls-wrapper" id="controls_${item.id}"></div>
     `;
 
     if (item.category === 'food') foodContainer.appendChild(el);
     else drinkContainer.appendChild(el);
   });
-  
-  // Update tombol setelah render
   updateMenuGridUI();
 }
 
 function handleCardClick(itemId, event) {
-    // Abaikan jika yang diklik adalah tombol + / - secara langsung
     if (event && event.target.closest('.qty-controls')) return;
 
     const item = DATA_MENU.find(i => i.id === itemId);
     const totalQty = cart.filter(c => c.id === itemId).reduce((sum, c) => sum + c.qty, 0);
     
-    // Jika belum ada di keranjang ATAU item tersebut butuh harga manual (seperti Kepala Kambing)
     if (totalQty === 0 || item.needsPriceInput) {
-        if (item.needsPriceInput) {
-            openCustomPriceModal(item.id);
-        } else {
-            addToCart(item, 1);
-        }
+        if (item.needsPriceInput) openCustomPriceModal(item.id);
+        else addToCart(item, 1);
     } else {
-        // Jika sudah ada (dan bukan manual), klik card langsung nambah 1 (mempercepat kasir)
         addToCart(item, 1);
     }
 }
@@ -1450,22 +1346,17 @@ function updateMenuGridUI() {
     const menuItemCard = document.getElementById(`item_${item.id}`);
     if(!controlContainer || !menuItemCard) return;
 
-    // Kalkulasi total di keranjang untuk ID ini
     const totalQty = cart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.qty, 0);
 
     if (totalQty > 0) {
-      // Tambahkan class agar div animasi slide down terbuka
       menuItemCard.classList.add('has-qty');
-      
       if(item.needsPriceInput) {
-          // Khusus menu manual (Kepala Kambing dll) cukup tampilkan Qty Total
           controlContainer.innerHTML = `
             <div class="qty-controls" style="border:none; background:none; box-shadow:none; justify-content:center;">
                <div class="qty-val" style="color:var(--accent); font-size:16px;">${totalQty} Masuk Keranjang</div>
             </div>
           `;
       } else {
-          // Menu reguler: Tampilkan tombol Plus Minus
           controlContainer.innerHTML = `
             <div class="qty-controls">
                <button class="qty-btn minus" onclick="event.stopPropagation(); decreaseFromCart('${item.id}', ${item.price})">−</button>
@@ -1475,14 +1366,11 @@ function updateMenuGridUI() {
           `;
       }
     } else {
-      // Jika kosong, hilangkan class agar div animasi tertutup
       menuItemCard.classList.remove('has-qty');
-      // Kontrol bisa dibiarkan kosong, efek slide-up akan menyembunyikannya
     }
   });
 }
 
-/* ================= CART LOGIC ================= */
 function addToCart(item, qty = 1, customPrice = null) {
   const priceToUse = customPrice || item.price;
   const existing = cart.find(c => c.id === item.id && c.price === priceToUse);
@@ -1490,12 +1378,7 @@ function addToCart(item, qty = 1, customPrice = null) {
   if (existing) {
     existing.qty += qty;
   } else {
-    cart.push({
-      id: item.id,
-      label: item.label,
-      price: priceToUse,
-      qty: qty
-    });
+    cart.push({ id: item.id, label: item.label, price: priceToUse, qty: qty });
   }
   renderCart();
 }
@@ -1504,9 +1387,7 @@ function decreaseFromCart(itemId, price) {
   const index = cart.findIndex(c => c.id === itemId && c.price === price);
   if (index !== -1) {
     cart[index].qty -= 1;
-    if (cart[index].qty <= 0) {
-      cart.splice(index, 1);
-    }
+    if (cart[index].qty <= 0) cart.splice(index, 1);
   }
   renderCart();
 }
@@ -1516,7 +1397,6 @@ function renderCart() {
   container.innerHTML = '';
   let total = 0;
 
-  // Update UI Kartu Menu (Sinkronisasi Qty)
   updateMenuGridUI();
 
   if (cart.length === 0) {
@@ -1524,7 +1404,6 @@ function renderCart() {
   } else {
     cart.forEach((c, idx) => {
       total += c.price * c.qty;
-      
       const row = document.createElement('div');
       row.className = 'cart-row';
       row.innerHTML = `
@@ -1552,7 +1431,6 @@ function resetCart() {
   document.getElementById('orderNote').value = '';
 }
 
-/* ================= CUSTOM PRICE LOGIC ================= */
 let currentCustomItemId = null;
 
 function openCustomPriceModal(itemId) {
@@ -1580,14 +1458,10 @@ function confirmCustomPrice() {
     }
     
     const item = DATA_MENU.find(i => i.id === currentCustomItemId);
-    if (item) {
-        // Masukkan ke keranjang dengan harga kustom
-        addToCart(item, 1, priceVal);
-    }
+    if (item) addToCart(item, 1, priceVal);
     closeModal('customPriceModal');
 }
 
-/* ================= AI PARSER LOGIC ================= */
 function parseAI() {
   let text = document.getElementById('aiInput').value.toLowerCase();
   
@@ -1596,7 +1470,7 @@ function parseAI() {
   text = text.replace(/\bk\b/g, 'sate kambing');
   text = text.replace(/\bkt\b/g, 'kambing tanpa lemak');
   text = text.replace(/\bg\b/g, 'gule');
-  text = text.replace(/\bn\b/g, 'nasi'); // Penambahan Kode N = Nasi
+  text = text.replace(/\bn\b/g, 'nasi'); 
 
   const feedbackEl = document.getElementById('aiFeedback');
 
@@ -1606,7 +1480,7 @@ function parseAI() {
   }
 
   const orders = text.split(/[\n,]+/);
-  let itemsAdded = 0; // Variabel untuk melacak item yang berhasil ditambahkan
+  let itemsAdded = 0; 
 
   orders.forEach(raw => {
     const line = raw.trim();
@@ -1650,10 +1524,7 @@ function parseAI() {
          }
       }
       else {
-        if (bestMatch.needsPriceInput && !customPrice) {
-            // Jika AI memanggil Kepala Kambing tapi tidak ada nominal harga ("kepala kambing 1")
-            // Abaikan agar tidak masuk keranjang dengan harga 0
-        } else {
+        if (!bestMatch.needsPriceInput || customPrice) {
             addToCart(bestMatch, qty);
             itemsAdded++;
         }
@@ -1662,24 +1533,20 @@ function parseAI() {
   });
 
   if (itemsAdded > 0) {
-      // BERHASIL MASUK KERANJANG
       document.getElementById('aiInput').value = '';
       feedbackEl.textContent = '✅ Berhasil masuk keranjang!';
       feedbackEl.style.backgroundColor = '#ecfdf5';
       feedbackEl.style.color = '#059669';
       feedbackEl.style.display = 'block';
-      setTimeout(() => { feedbackEl.style.display = 'none'; }, 3000); // Pesan hilang setelah 3 detik
+      setTimeout(() => { feedbackEl.style.display = 'none'; }, 3000); 
   } else {
-      // GAGAL
       feedbackEl.textContent = '❌ Gagal! Cek ketikan atau nama menu.';
       feedbackEl.style.backgroundColor = '#fef2f2';
       feedbackEl.style.color = '#dc2626';
       feedbackEl.style.display = 'block';
-      // Teks tidak dihapus agar bisa diedit kembali oleh pengguna
   }
 }
 
-/* ================= CHECKOUT & TRANSACTION ================= */
 function showCheckout() {
   if (cart.length === 0) return alert('Keranjang kosong');
   const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
@@ -1724,7 +1591,7 @@ function processTransaction() {
     id: Date.now(),
     date: new Date().toLocaleString('id-ID'),
     tableNum: tableNum,
-    note: note, // Simpan catatan
+    note: note, 
     items: [...cart],
     total: total,
     paid: paid
@@ -1740,8 +1607,6 @@ function processTransaction() {
   alert('Transaksi Berhasil!');
 }
 
-
-/* ================= REPORT PAGE ================= */
 function showReport() {
   const salesStats = {}; 
   
@@ -1755,7 +1620,7 @@ function showReport() {
         const isCustom = menuRef ? (menuRef.price !== item.price) : false;
 
         salesStats[key] = {
-          id: item.id, // Menyimpan ID agar bisa dicek jenis satenya
+          id: item.id,
           label: item.label,
           price: item.price,
           qty: 0,
@@ -1782,14 +1647,10 @@ function showReport() {
       priceDisplay = `<span style="color:#ef4444;font-size:12px;background:#fee2e2;padding:2px 8px;border-radius:6px;font-weight:600">Khusus: ${formatRp(item.price)}</span>`;
     }
 
-    // LOGIKA PERHITUNGAN TUSUK
     let qtyDisplay = item.qty;
-    
-    // Cek ID item apakah termasuk Sate Porsi (Porsi x 10)
     if (['sk_porsi', 'sk_nl_porsi', 'sa_porsi'].includes(item.id)) {
         qtyDisplay = `${item.qty} Porsi <span style="font-weight:800;color:var(--accent);font-size:12px;display:block">(${item.qty * 10} Tusuk)</span>`;
     } 
-    // Cek ID item apakah termasuk Sate Tusuk (Eceran)
     else if (['sk_tusuk', 'sk_nl_tusuk', 'sa_tusuk'].includes(item.id)) {
         qtyDisplay = `${item.qty} Tusuk`;
     }
@@ -1858,7 +1719,6 @@ function closeReport() {
   document.body.style.overflow = '';
 }
 
-/* ================= HISTORY & STATS ================= */
 function updateStats() {
   const today = new Date().toLocaleDateString('id-ID');
   const todaysTrx = transactions.filter(t => t.date.includes(today)); 
@@ -1938,8 +1798,6 @@ function editTransaction(id) {
   renderCart();
   updateStats();
   renderHistory();
-  
-  // Scroll to Top on Mobile, or ensure visible on Desktop
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 

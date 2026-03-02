@@ -84,6 +84,9 @@
     .header-btn { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: 0.2s; color: #334155; display: flex; align-items: center; justify-content: center; }
     .header-btn:hover { background: #e2e8f0; color: var(--accent); transform: translateY(-1px); }
     
+    /* Pre Order Badge */
+    .po-badge { position:absolute; top:-5px; right:-5px; background:var(--red); color:white; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:10px; display:none; }
+
     /* Tombol Bluetooth Spesifik */
     #btnConnect { position: relative; }
     #btnConnect.connected { background: #ecfdf5; border-color: #6ee7b7; color: #059669; }
@@ -220,6 +223,26 @@
     .slide-up { animation: slideUp 0.3s ease-out forwards; }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+    /* Animasi Layar Panggilan Alarm */
+    @keyframes ringShake {
+        0% { transform: rotate(0deg) scale(1); }
+        10% { transform: rotate(15deg) scale(1.1); }
+        20% { transform: rotate(-15deg) scale(1.1); }
+        30% { transform: rotate(15deg) scale(1.1); }
+        40% { transform: rotate(-15deg) scale(1.1); }
+        50% { transform: rotate(0deg) scale(1); }
+        100% { transform: rotate(0deg) scale(1); }
+    }
+    .ringing-icon { font-size: 80px; margin-bottom: 20px; animation: ringShake 1.5s infinite; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
+    
+    /* Pulsa latar belakang untuk efek darurat */
+    @keyframes bgPulse {
+        0% { background-color: rgba(15, 23, 42, 0.95); }
+        50% { background-color: rgba(153, 27, 27, 0.95); }
+        100% { background-color: rgba(15, 23, 42, 0.95); }
+    }
+    .alarm-bg-pulse { animation: bgPulse 2s infinite; }
+
     /* === SPLASH SCREEN === */
     #splash-screen { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease-out, visibility 0.6s; }
     .splash-logo-container { width: 100px; height: 100px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(8, 145, 178, 0.3); margin-bottom: 24px; animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
@@ -255,6 +278,12 @@
     
     <!-- HEADER ACTIONS: Koneksi Bluetooth & Laporan -->
     <div class="header-actions">
+      <!-- BUTTON PRE ORDER LIST -->
+      <button class="header-btn" style="position:relative;" onclick="showPreOrderList()" title="Daftar Pre Order">
+        📦
+        <span id="poBadgeCount" class="po-badge">0</span>
+      </button>
+
       <button id="btnConnect" class="header-btn disconnected" onclick="PrinterService.connect()" title="Koneksi Printer Bluetooth">
         <span class="bt-status-dot"></span>
         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.71,7.71L12,2h-1v7.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L11,14.41V22h1l5.71-5.71L13.41,12L17.71,7.71z M13,5.83l1.88,1.88L13,9.59V5.83z M13,18.17v-3.76l1.88,1.88L13,18.17z"/></svg>
@@ -334,7 +363,10 @@
             <span>Total</span>
             <span id="cartTotal">Rp 0</span>
           </div>
-          <button class="btn" onclick="showCheckout()">Bayar / Checkout</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn secondary" style="flex:1; background:#e0e7ff; color:#4338ca; border-color:#c7d2fe;" onclick="showPreOrderModal()">📅 Pre Order</button>
+            <button class="btn" style="flex:1.5;" onclick="showCheckout()">💳 Bayar</button>
+          </div>
         </div>
       </div>
 
@@ -359,6 +391,41 @@
 
 </div>
 
+<!-- MODAL PRE ORDER INPUT -->
+<div id="preOrderModal" class="modal-overlay">
+  <div class="modal-card">
+    <h3 style="margin:0 0 4px;text-align:center;font-size:20px; color: #1e293b;">Buat Pre Order</h3>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px">Simpan pesanan untuk diambil nanti</div>
+    
+    <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block;">Nama Pemesan</label>
+        <input type="text" id="poNameInput" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px;" placeholder="Contoh: Rudi">
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <label style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block;">Jam Pengambilan</label>
+        <input type="time" id="poTimeInput" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 18px; font-weight: bold; text-align: center;">
+    </div>
+
+    <button class="btn" style="background: #4338ca; box-shadow: 0 4px 6px -1px rgba(67, 56, 202, 0.3);" onclick="savePreOrder()">Simpan Pre Order</button>
+    <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('preOrderModal')">Batal</button>
+  </div>
+</div>
+
+<!-- MODAL DAFTAR PRE ORDER -->
+<div id="preOrderListModal" class="modal-overlay">
+  <div class="modal-card" style="max-width: 500px;">
+    <h3 style="margin:0 0 16px;font-size:20px; color: #1e293b; display:flex; justify-content:space-between; align-items:center;">
+        Daftar Pre Order
+        <button onclick="closeModal('preOrderListModal')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">&times;</button>
+    </h3>
+    
+    <div id="poListContainer" style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+        <!-- List Pre Order akan di-render di sini -->
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PILIH BLUETOOTH -->
 <div id="btModal" class="modal-overlay">
     <div class="modal-card">
@@ -377,6 +444,25 @@
 
         <button class="btn secondary" style="margin-top:12px" onclick="closeModal('btModal')">Batal</button>
     </div>
+</div>
+
+<!-- MODAL ALARM CALL SCREEN (Tampilan Panggilan) -->
+<div id="alarmCallModal" class="modal-overlay alarm-bg-pulse" style="z-index: 10000;">
+  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; padding: 20px;">
+    
+    <div class="ringing-icon">🔔</div>
+    
+    <h2 style="color: white; text-align: center; margin-bottom: 10px; font-size: 24px; letter-spacing: 2px;">ALARM PRE-ORDER</h2>
+    
+    <p id="alarmCallText" style="color: #cbd5e1; text-align: center; font-size: 20px; font-weight: 600; line-height: 1.5; margin-bottom: 50px; padding: 0 20px;">
+        Pesanan atas nama Budi harus segera disiapkan.
+    </p>
+    
+    <button class="btn" style="background: #ef4444; color: white; border-radius: 50px; font-size: 20px; padding: 20px 40px; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.6); max-width: 300px;" onclick="dismissAlarmCall()">
+      TUTUP ALARM
+    </button>
+    
+  </div>
 </div>
 
 <!-- MODAL PEMBAYARAN -->
@@ -858,6 +944,120 @@ const PrinterService = {
             () => console.log("Print Pesanan Success"), 
             (err) => alert("Gagal print pesanan: " + err)
         );
+    },
+
+    // ===== FUNGSI PRINT STRUK PRE ORDER =====
+    printPreOrder: function(po) {
+        if (!this.isConnected) {
+            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
+            return;
+        }
+
+        const total = po.total;
+        const rp = (n) => Number(n).toLocaleString('id-ID');
+        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
+        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
+        
+        const pair = (left, right, width = 32) => {
+            const spaces = Math.max(0, width - left.length - right.length);
+            return left + " ".repeat(spaces) + right;
+        };
+
+        let cmds = "";
+        
+        // Info Toko (Dibawah Logo)
+        cmds += this.ESC.RESET;
+        cmds += this.ESC.ALIGN_CENTER;
+        cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
+        cmds += "Telp/WA: 0852 3141 3408" + this.ESC.FEED;
+        cmds += this.ESC.FEED;
+        
+        cmds += this.ESC.ALIGN_CENTER;
+        cmds += this.ESC.BOLD_ON + "*** STRUK PRE-ORDER ***" + this.ESC.BOLD_OFF + this.ESC.FEED;
+        cmds += this.ESC.FEED;
+
+        cmds += this.ESC.ALIGN_LEFT;
+        cmds += `Tanggal: ${new Date().toLocaleString('id-ID')}` + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON + `NAMA  : ${po.name}` + this.ESC.FEED;
+        cmds += `AMBIL : ${po.time}` + this.ESC.BOLD_OFF + this.ESC.FEED;
+        if(po.note && po.note !== '-') {
+            cmds += `Catatan: ${po.note}` + this.ESC.FEED;
+        }
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        cmds += this.ESC.FONT_NORMAL;
+        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        po.items.forEach(item => {
+            let suffix = "";
+            let lowerId = item.id.toLowerCase();
+            let lowerLabel = item.label.toLowerCase();
+            
+            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
+            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
+            
+            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
+            
+            let numStr = item.qty.toString();
+            let alignNum = ("   " + numStr).slice(-3);
+            let alignSuf = suffix ? " " + suffix : "  ";
+            let qtyFinal = alignNum + alignSuf; 
+
+            let nameStr = padRight(cleanLabel, 17);
+            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
+            
+            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
+            cmds += this.ESC.FEED;
+        });
+
+        cmds += "--------------------------------" + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON;
+        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
+        cmds += this.ESC.BOLD_OFF;
+
+        cmds += this.ESC.FEED;
+        cmds += this.ESC.ALIGN_CENTER;
+        cmds += "Harap bawa struk ini sbg" + this.ESC.FEED;
+        cmds += "bukti pengambilan Pre-Order" + this.ESC.FEED;
+        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
+
+        // Image Print Logic
+        const img = new Image();
+        img.src = this.LOGO_URL;
+        
+        img.onload = () => {
+            try {
+                const imgHexBuffer = EscPosHelper.getImageData(img);
+                const textBuffer = new Uint8Array(cmds.length);
+                for (let i = 0; i < cmds.length; i++) {
+                    textBuffer[i] = cmds.charCodeAt(i);
+                }
+
+                const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
+                const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
+                
+                combined.set(centerCmd, 0);
+                combined.set(imgHexBuffer, centerCmd.length);
+                combined.set(textBuffer, centerCmd.length + imgHexBuffer.length);
+
+                window.bluetoothSerial.write(combined.buffer, 
+                    () => console.log("Print PreOrder Success"), 
+                    (err) => alert("Gagal Print: " + err)
+                );
+            } catch (e) {
+                alert("Gagal memproses gambar: " + e);
+                window.bluetoothSerial.write(cmds, null, null);
+            }
+        };
+
+        img.onerror = () => {
+            const backupHeader = this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED + cmds;
+            window.bluetoothSerial.write(backupHeader, 
+                () => alert("Logo tidak ditemukan, mencetak teks standar."), 
+                (err) => alert("Gagal print: " + err)
+            );
+        };
     }
 };
 
@@ -899,6 +1099,7 @@ const DATA_MENU = [
 
 let cart = [];
 let transactions = JSON.parse(localStorage.getItem('trx_cak_sabar') || '[]');
+let preOrders = JSON.parse(localStorage.getItem('po_cak_sabar') || '[]');
 const formatRp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
 
 /* ================= INIT ================= */
@@ -909,11 +1110,277 @@ function init() {
   renderMenuGrid();
   updateStats();
   renderHistory();
+  updatePOBadge();
+  startAlarmChecker();
   
   setTimeout(() => {
     const splash = document.getElementById('splash-screen');
-    splash.classList.add('hide-splash');
+    if (splash) splash.classList.add('hide-splash');
   }, 3000); 
+}
+
+/* ================= PRE ORDER LOGIC ================= */
+function showPreOrderModal() {
+    if (cart.length === 0) return alert('Keranjang masih kosong!');
+    document.getElementById('poNameInput').value = '';
+    
+    // Set waktu default 1 jam dari sekarang
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('poTimeInput').value = `${hh}:${mm}`;
+    
+    document.getElementById('preOrderModal').style.display = 'flex';
+}
+
+function savePreOrder() {
+    const name = document.getElementById('poNameInput').value.trim();
+    const time = document.getElementById('poTimeInput').value;
+    const note = document.getElementById('orderNote').value || '-';
+    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+
+    if (!name || !time) return alert('Nama dan Waktu pengambilan harus diisi!');
+
+    const po = {
+        id: Date.now(),
+        name: name,
+        time: time,
+        date: new Date().toLocaleDateString('id-ID'),
+        note: note,
+        items: [...cart],
+        total: total,
+        alarm30Done: false, // Flag untuk alarm 30 menit
+        alarm15Done: false, // Flag untuk alarm 15 menit
+        alarmNowDone: false // Flag untuk alarm saat ini
+    };
+
+    preOrders.push(po);
+    preOrders.sort((a, b) => a.time.localeCompare(b.time));
+    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
+
+    resetCart();
+    closeModal('preOrderModal');
+    updatePOBadge();
+    alert(`Pre Order atas nama ${name} berhasil disimpan untuk jam ${time}`);
+}
+
+function showPreOrderList() {
+    renderPreOrderList();
+    document.getElementById('preOrderListModal').style.display = 'flex';
+}
+
+function updatePOBadge() {
+    const today = new Date().toLocaleDateString('id-ID');
+    const activePO = preOrders.filter(p => p.date === today);
+    const badge = document.getElementById('poBadgeCount');
+    if (badge) {
+        if (activePO.length > 0) {
+            badge.textContent = activePO.length;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function renderPreOrderList() {
+    const container = document.getElementById('poListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const today = new Date().toLocaleDateString('id-ID');
+    const activePO = preOrders.filter(p => p.date === today);
+
+    if (activePO.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-style:italic;">Tidak ada Pre Order hari ini</div>';
+        return;
+    }
+
+    activePO.forEach((po, index) => {
+        const itemStr = po.items.map(i => `${i.label} (x${i.qty})`).join(', ');
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; position:relative;';
+        
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
+                <div>
+                    <div style="font-weight:800; color:#1e293b; font-size:16px;">${po.name}</div>
+                    <div style="color:#4338ca; font-weight:700; font-size:14px; margin-top:2px;">🕒 Ambil Jam: ${po.time}</div>
+                </div>
+                <div style="font-weight:800; color:var(--accent);">${formatRp(po.total)}</div>
+            </div>
+            <div style="font-size:12px; color:#64748b; line-height:1.4; margin-bottom:12px;">
+                ${itemStr}
+                ${po.note !== '-' ? `<br><span style="color:#d97706">Catatan: ${po.note}</span>` : ''}
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom: 8px;">
+                <button class="btn secondary" style="margin:0; padding:10px; font-size:13px; flex:1; background:#f0fdf4; color:#166534; border-color:#bbf7d0;" onclick="printPO(${po.id})">🖨️ Cetak Struk Pre Order</button>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn" style="margin:0; padding:10px; font-size:13px; flex:1;" onclick="processPreOrder(${po.id})">Selesaikan / Bayar</button>
+                <button class="btn secondary" style="margin:0; padding:10px; font-size:13px; color:var(--red); border-color:#fecaca; background:#fef2f2;" onclick="deletePreOrder(${po.id})">Batal</button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function printPO(id) {
+    const po = preOrders.find(p => p.id === id);
+    if(po) PrinterService.printPreOrder(po);
+}
+
+function processPreOrder(id) {
+    if (cart.length > 0) {
+        if (!confirm('Keranjang saat ini tidak kosong. Menarik Pre Order akan menimpa keranjang. Lanjutkan?')) return;
+    }
+
+    const poIndex = preOrders.findIndex(p => p.id === id);
+    if (poIndex === -1) return;
+    const po = preOrders[poIndex];
+
+    cart = [...po.items];
+    document.getElementById('orderNote').value = po.note !== '-' ? po.note : '';
+    
+    preOrders.splice(poIndex, 1);
+    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
+
+    renderCart();
+    updatePOBadge();
+    closeModal('preOrderListModal');
+    showCheckout();
+}
+
+function deletePreOrder(id) {
+    if(!confirm('Yakin ingin membatalkan dan menghapus Pre Order ini?')) return;
+    preOrders = preOrders.filter(p => p.id !== id);
+    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
+    renderPreOrderList();
+    updatePOBadge();
+}
+
+let alarmInterval; // Variabel untuk menyimpan loop suara alarm
+
+function startAlarmChecker() {
+    // Cek waktu setiap 15 detik agar lebih responsif
+    setInterval(() => {
+        checkAlarms();
+    }, 15000);
+}
+
+function checkAlarms() {
+    const today = new Date().toLocaleDateString('id-ID');
+    const now = new Date();
+
+    let needsSave = false;
+
+    preOrders.forEach(po => {
+        if (po.date !== today) return;
+
+        const [poHour, poMin] = po.time.split(':').map(Number);
+        
+        const poDate = new Date();
+        poDate.setHours(poHour, poMin, 0, 0);
+
+        const diffMs = poDate - now;
+        const diffMins = Math.floor(diffMs / 60000);
+
+        // Inisialisasi properti jika data lama belum memilikinya
+        if(po.alarm30Done === undefined) po.alarm30Done = false;
+        if(po.alarm15Done === undefined) po.alarm15Done = false;
+        if(po.alarmNowDone === undefined) po.alarmNowDone = false;
+
+        // ALARM 1: 30 Menit Sebelumnya
+        if (diffMins <= 30 && diffMins > 15 && !po.alarm30Done) {
+            po.alarm30Done = true;
+            needsSave = true;
+            triggerAlarmCall(`Tiga puluh menit lagi! Waktu pengambilan pesanan atas nama ${po.name}.`);
+        }
+        // ALARM 2: 15 Menit Sebelumnya
+        else if (diffMins <= 15 && diffMins > 0 && !po.alarm15Done) {
+            po.alarm15Done = true;
+            needsSave = true;
+            triggerAlarmCall(`Lima belas menit lagi! Harap persiapkan pesanan atas nama ${po.name}.`);
+        }
+        // ALARM 3: Waktunya tiba (0 menit hingga telat 30 menit)
+        else if (diffMins <= 0 && diffMins >= -30 && !po.alarmNowDone) {
+            po.alarmNowDone = true;
+            needsSave = true;
+            triggerAlarmCall(`Waktu pengambilan tiba! Pesanan atas nama ${po.name} harusnya diambil sekarang.`);
+        }
+    });
+
+    if (needsSave) {
+        localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
+    }
+}
+
+function triggerAlarmCall(text) {
+    console.log("ALARM TRIGGERED:", text);
+    
+    // Tampilkan Layar Panggilan Penuh
+    document.getElementById('alarmCallText').innerText = text;
+    document.getElementById('alarmCallModal').style.display = 'flex';
+    
+    // Getar jika HP mendukung (Pola: Getar panjang)
+    if (navigator.vibrate) {
+        navigator.vibrate([1000, 500, 1000, 500, 1000]);
+    }
+
+    // Mainkan suara pertama kali
+    playTTS(text);
+
+    // Ulangi suara dan getaran setiap 6 detik sampai ditutup
+    clearInterval(alarmInterval); // Hapus interval lama jika ada
+    alarmInterval = setInterval(() => {
+        playTTS(text);
+        if (navigator.vibrate) navigator.vibrate([1000, 500]);
+    }, 6000);
+
+    // Tampilkan notifikasi push jika menggunakan Cordova
+    if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+        cordova.plugins.notification.local.schedule({
+            title: 'ALARM PRE-ORDER',
+            text: text,
+            foreground: true,
+            wakeup: true // Mencoba membangunkan layar HP
+        });
+    }
+}
+
+function playTTS(text) {
+    if (typeof window.TTS !== 'undefined') {
+        window.TTS.speak({
+            text: text,
+            locale: 'id-ID',
+            rate: 1.0
+        });
+    } else if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Hentikan antrean suara sebelumnya
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+function dismissAlarmCall() {
+    // Sembunyikan Layar Panggilan
+    document.getElementById('alarmCallModal').style.display = 'none';
+    
+    // Matikan pengulangan
+    clearInterval(alarmInterval);
+    
+    // Matikan suara yang sedang berjalan
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+    
+    // Matikan getaran
+    if (navigator.vibrate) {
+        navigator.vibrate(0); 
+    }
 }
 
 /* ================= RENDER MENU GRID ================= */

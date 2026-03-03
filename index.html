@@ -541,6 +541,18 @@ const PrinterService = {
                     cordova.plugins.backgroundMode.disableWebViewOptimizations();
                 });
             }
+
+            // LISTENER NOTIFIKASI AGAR BISA MEMBUKA APLIKASI SAAT DIKLIK
+            if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                // Saat badan notifikasi diklik
+                cordova.plugins.notification.local.on('click', function (notification) {
+                    if (cordova.plugins.backgroundMode) cordova.plugins.backgroundMode.moveToForeground();
+                });
+                // Saat tombol "Lihat Pesanan" diklik
+                cordova.plugins.notification.local.on('buka', function (notification) {
+                    if (cordova.plugins.backgroundMode) cordova.plugins.backgroundMode.moveToForeground();
+                });
+            }
         }, false);
     },
 
@@ -1129,17 +1141,17 @@ function checkAlarms() {
         if (diffMins <= 30 && diffMins > 15 && !po.alarm30Done) {
             po.alarm30Done = true;
             needsSave = true;
-            triggerAlarmCall(`Tiga puluh menit lagi! Waktu pengambilan pesanan atas nama ${po.name}.`);
+            triggerAlarmCall(`Tiga puluh menit lagi! Waktu pengambilan pesanan atas nama ${po.name}.`, po.id);
         }
         else if (diffMins <= 15 && diffMins > 0 && !po.alarm15Done) {
             po.alarm15Done = true;
             needsSave = true;
-            triggerAlarmCall(`Lima belas menit lagi! Harap persiapkan pesanan atas nama ${po.name}.`);
+            triggerAlarmCall(`Lima belas menit lagi! Harap persiapkan pesanan atas nama ${po.name}.`, po.id);
         }
         else if (diffMins <= 0 && diffMins >= -30 && !po.alarmNowDone) {
             po.alarmNowDone = true;
             needsSave = true;
-            triggerAlarmCall(`Waktu pengambilan tiba! Pesanan atas nama ${po.name} harusnya diambil sekarang.`);
+            triggerAlarmCall(`Waktu pengambilan tiba! Pesanan atas nama ${po.name} harusnya diambil sekarang.`, po.id);
         }
     });
 
@@ -1148,7 +1160,13 @@ function checkAlarms() {
     }
 }
 
-function triggerAlarmCall(text) {
+function triggerAlarmCall(text, id) {
+    // 1. PAKSA HP BANGUN DARI TIDUR (WAKE UP SCREEN)
+    if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.backgroundMode) {
+        cordova.plugins.backgroundMode.wakeUp();
+        cordova.plugins.backgroundMode.unlock();
+    }
+
     document.getElementById('alarmCallText').innerText = text;
     document.getElementById('alarmCallModal').style.display = 'flex';
     
@@ -1157,17 +1175,26 @@ function triggerAlarmCall(text) {
     playTTS(text);
 
     clearInterval(alarmInterval);
+    // 2. LOOP SUARA TERUS MENERUS
     alarmInterval = setInterval(() => {
         playTTS(text);
         if (navigator.vibrate) navigator.vibrate([1000, 500]);
     }, 6000);
 
+    // 3. BUAT NOTIFIKASI PRIORITAS TINGGI (HEADS-UP) DENGAN TOMBOL
     if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
         cordova.plugins.notification.local.schedule({
-            title: 'ALARM PRE-ORDER',
+            id: id || 999,
+            title: '🚨 ALARM PRE-ORDER',
             text: text,
             foreground: true,
-            wakeup: true 
+            wakeup: true,
+            priority: 2, // 2 = High Priority (Muncul pop-up di atas layar)
+            sticky: true, // Notifikasi tidak bisa digeser/dihapus biasa
+            vibrate: true,
+            actions: [
+                { id: 'buka', title: '👀 LIHAT PESANAN' }
+            ]
         });
     }
 }
@@ -1209,6 +1236,11 @@ function dismissAlarmCall() {
     clearInterval(alarmInterval);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     if (navigator.vibrate) navigator.vibrate(0); 
+    
+    // 4. HAPUS NOTIFIKASI SAAT ALARM DITUTUP
+    if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+        cordova.plugins.notification.local.cancelAll();
+    }
 }
 
 function renderMenuGrid() {

@@ -537,21 +537,34 @@ const PrinterService = {
                     name: 'Alarm Kasir',
                     importance: 5, // MAX IMPORTANCE = Muncul dari atas layar
                     vibration: true,
-                    wakeup: true
+                    wakeup: true,
+                    bypassDnd: true // Menerobos mode Jangan Ganggu (Do Not Disturb)
+                });
+
+                // --- KUNCI UTAMA: SAAT ALARM MELEDAK DI LATAR BELAKANG ---
+                // Kode ini akan aktif tepat di detik alarm berbunyi
+                cordova.plugins.notification.local.on('trigger', function (notification) {
+                    if (cordova.plugins.backgroundMode) {
+                        cordova.plugins.backgroundMode.wakeUp(); // Bangunkan Layar
+                        cordova.plugins.backgroundMode.unlock(); // Buka Kunci
+                        cordova.plugins.backgroundMode.moveToForeground(); // Sedot aplikasi ke depan!
+                    }
+                    // Langsung jalankan layar merah & loop suara berulang-ulang
+                    triggerAlarmCall(notification.text, notification.id);
                 });
 
                 // 3. Listener jika tombol "Lihat Pesanan" ditekan
                 cordova.plugins.notification.local.on('buka', function (notification) {
-                    // Tampilkan modal alarm di dalam app
+                    if (cordova.plugins.backgroundMode) cordova.plugins.backgroundMode.moveToForeground();
                     triggerAlarmCall(notification.text, notification.id);
-                    // Hapus sisa notifikasi yang sedang ngantri
-                    cordova.plugins.notification.local.cancel([notification.id+1, notification.id+2, notification.id-1, notification.id-2]);
+                    cordova.plugins.notification.local.cancel(notification.id);
                 });
 
                 // 4. Listener jika badan notifikasi ditekan
                 cordova.plugins.notification.local.on('click', function (notification) {
+                    if (cordova.plugins.backgroundMode) cordova.plugins.backgroundMode.moveToForeground();
                     triggerAlarmCall(notification.text, notification.id);
-                    cordova.plugins.notification.local.cancel([notification.id+1, notification.id+2, notification.id-1, notification.id-2]);
+                    cordova.plugins.notification.local.cancel(notification.id);
                 });
             }
         }, false);
@@ -1021,7 +1034,7 @@ function savePreOrder() {
     
     if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
         
-        // Buat jadwal untuk waktu pas pesanan (Notifikasi 1)
+        // Buat 1 jadwal UTAMA saja (Jika ditumpuk, Android akan me-mute suaranya)
         if (poDate > new Date()) {
             cordova.plugins.notification.local.schedule({
                 id: uniqueId,
@@ -1033,29 +1046,7 @@ function savePreOrder() {
                 wakeup: true,
                 priority: 2, 
                 vibrate: true,
-                actions: [{ id: 'buka', title: '👀 LIHAT PESANAN' }]
-            });
-
-            // Notifikasi 2 (Jeda 5 detik dari yang pertama, agar terus getar dan bunyi)
-            cordova.plugins.notification.local.schedule({
-                id: uniqueId + 1,
-                channel: 'panggilan_kasir',
-                title: '🚨 PESANAN HARUS DIAMBIL!',
-                text: `(PANGGILAN ULANG) Pre-Order ${name}!`,
-                trigger: { at: new Date(poDate.getTime() + 5000) },
-                wakeup: true, priority: 2, vibrate: true,
-                actions: [{ id: 'buka', title: '👀 LIHAT PESANAN' }]
-            });
-
-            // Notifikasi 3 (Jeda 10 detik dari yang pertama)
-            cordova.plugins.notification.local.schedule({
-                id: uniqueId + 2,
-                channel: 'panggilan_kasir',
-                title: '🚨 PESANAN HARUS DIAMBIL!',
-                text: `(PANGGILAN ULANG) Pre-Order ${name}!`,
-                trigger: { at: new Date(poDate.getTime() + 10000) },
-                wakeup: true, priority: 2, vibrate: true,
-                actions: [{ id: 'buka', title: '👀 LIHAT PESANAN' }]
+                actions: [{ id: 'buka', title: '👀 BUKA APLIKASI' }]
             });
         }
     }
@@ -1146,7 +1137,7 @@ function processPreOrder(id) {
     
     // Batalkan notifikasi jika sudah dibayar
     if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-        cordova.plugins.notification.local.cancel([po.id, po.id+1, po.id+2]);
+        cordova.plugins.notification.local.cancel(po.id);
     }
 
     preOrders.splice(poIndex, 1);
@@ -1162,7 +1153,7 @@ function deletePreOrder(id) {
     if(!confirm('Yakin ingin membatalkan dan menghapus Pre Order ini?')) return;
     
     if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-        cordova.plugins.notification.local.cancel([id, id+1, id+2]);
+        cordova.plugins.notification.local.cancel(id);
     }
 
     preOrders = preOrders.filter(p => p.id !== id);

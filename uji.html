@@ -165,26 +165,6 @@
     .slide-up { animation: slideUp 0.3s ease-out forwards; }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-    @media (prefers-reduced-motion: no-preference) {
-        @keyframes ringShake {
-            0% { transform: rotate(0deg) scale(1); }
-            10% { transform: rotate(15deg) scale(1.1); }
-            20% { transform: rotate(-15deg) scale(1.1); }
-            30% { transform: rotate(15deg) scale(1.1); }
-            40% { transform: rotate(-15deg) scale(1.1); }
-            50% { transform: rotate(0deg) scale(1); }
-            100% { transform: rotate(0deg) scale(1); }
-        }
-        .ringing-icon { font-size: 80px; margin-bottom: 20px; animation: ringShake 1.5s infinite; text-shadow: 0 0 20px rgba(255,255,255,0.5); }
-        
-        @keyframes bgPulse {
-            0% { background-color: rgba(15, 23, 42, 0.95); }
-            50% { background-color: rgba(153, 27, 27, 0.95); }
-            100% { background-color: rgba(15, 23, 42, 0.95); }
-        }
-        .alarm-bg-pulse { animation: bgPulse 2s infinite; }
-    }
-
     #splash-screen { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease-out, visibility 0.6s; }
     .splash-logo-container { width: 100px; height: 100px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(8, 145, 178, 0.3); margin-bottom: 24px; animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
     .splash-logo-img { width: 60px; height: 60px; object-fit: contain; filter: brightness(0) invert(1); }
@@ -193,6 +173,10 @@
     .hide-splash { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
     @keyframes bounceIn { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
     @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+    /* New Alarm Style */
+    .alarm-accent { border: 2px solid var(--accent); background: #f0f9ff; }
+    .alarm-detail-list { font-size: 14px; color: #334155; margin: 12px 0; padding: 12px; background: #fff; border-radius: 8px; border: 1px dashed #cbd5e1; }
   </style>
 </head>
 <body>
@@ -326,6 +310,19 @@
 
 </div>
 
+<!-- New PO Trigger Modal -->
+<div id="poActionModal" class="modal-overlay">
+  <div class="modal-card alarm-accent">
+    <h3 id="poActionTitle" style="margin:0 0 4px;text-align:center;font-size:20px; color: var(--accent);">Peringatan Pre-Order!</h3>
+    <div id="poActionSub" style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px">Pesanan harus segera disiapkan</div>
+    
+    <div id="poActionDetails" class="alarm-detail-list"></div>
+
+    <button class="btn" id="btnProcessPO" style="background: var(--accent);">Proses Pesanan</button>
+    <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('poActionModal')">Tutup</button>
+  </div>
+</div>
+
 <div id="preOrderModal" class="modal-overlay">
   <div class="modal-card">
     <h3 style="margin:0 0 4px;text-align:center;font-size:20px; color: #1e293b;">Buat Pre Order</h3>
@@ -372,19 +369,6 @@
 
         <button class="btn secondary" style="margin-top:12px" onclick="closeModal('btModal')">Batal</button>
     </div>
-</div>
-
-<div id="alarmCallModal" class="modal-overlay alarm-bg-pulse" style="z-index: 10000;">
-  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; padding: 20px;">
-    <div class="ringing-icon">🔔</div>
-    <h2 style="color: white; text-align: center; margin-bottom: 10px; font-size: 24px; letter-spacing: 2px;">ALARM PRE-ORDER</h2>
-    <p id="alarmCallText" style="color: #cbd5e1; text-align: center; font-size: 20px; font-weight: 600; line-height: 1.5; margin-bottom: 50px; padding: 0 20px;">
-        Pesanan atas nama Budi harus segera disiapkan.
-    </p>
-    <button class="btn" style="background: #ef4444; color: white; border-radius: 50px; font-size: 20px; padding: 20px 40px; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.6); max-width: 300px;" onclick="dismissAlarmCall()">
-      TUTUP ALARM
-    </button>
-  </div>
 </div>
 
 <div id="paymentModal" class="modal-overlay">
@@ -449,67 +433,11 @@
 </div>
 
 <script>
-/* ================= HELPER GAMBAR KE HEX (ESCPOS) ================= */
-const EscPosHelper = {
-    getImageData: function(imageElement) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        let w = imageElement.width;
-        let h = imageElement.height;
-        const MAX_W = 380;
-        
-        if (w > MAX_W) {
-            h = Math.floor(h * (MAX_W / w));
-            w = MAX_W;
-        }
-        
-        if (w % 8 !== 0) w -= (w % 8);
-
-        canvas.width = w;
-        canvas.height = h;
-        
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(imageElement, 0, 0, w, h);
-        
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const data = imgData.data;
-        
-        const result = [];
-        const xBytes = w / 8;
-        const xL = xBytes % 256;
-        const xH = Math.floor(xBytes / 256);
-        const yL = h % 256;
-        const yH = Math.floor(h / 256);
-        
-        result.push(0x1D, 0x76, 0x30, 0, xL, xH, yL, yH);
-        
-        for (let y = 0; y < h; y++) {
-            for (let x = 0; x < xBytes; x++) {
-                let byte = 0;
-                for (let b = 0; b < 8; b++) {
-                    const px = (x * 8) + b;
-                    const offset = (y * w + px) * 4;
-                    const r = data[offset];
-                    const g = data[offset + 1];
-                    const bVal = data[offset + 2];
-                    const brightness = (r + g + bVal) / 3;
-                    if (brightness < 128) byte |= (1 << (7 - b));
-                }
-                result.push(byte);
-            }
-        }
-        return new Uint8Array(result);
-    }
-};
-
 /* ================= PRINTER SERVICE (BLUETOOTH) ================= */
 const PrinterService = {
     isConnected: false,
     macAddress: null,
     isCordovaReady: false,
-    LOGO_URL: 'logoku.jpg', 
 
     ESC: {
         RESET: '\x1B\x40',
@@ -528,12 +456,12 @@ const PrinterService = {
             console.log("Cordova Device Ready");
             this.isCordovaReady = true;
 
-            // Pastikan Background Mode Aktif
-            if (cordova.plugins.backgroundMode) {
+            // Background Mode setup
+            if (window.cordova && cordova.plugins && cordova.plugins.backgroundMode) {
                 cordova.plugins.backgroundMode.enable();
                 cordova.plugins.backgroundMode.setDefaults({
                     title: 'Kasir CAKSABAR Aktif',
-                    text: 'Memantau Pre-Order di latar belakang...',
+                    text: 'Memantau Pre-Order...',
                     icon: 'icon', 
                     color: '0891b2',
                     resume: true,
@@ -541,7 +469,6 @@ const PrinterService = {
                     bigText: true
                 });
                 
-                // Menghindari aplikasi dimatikan oleh sistem (battery optimization)
                 cordova.plugins.backgroundMode.on('activate', function() {
                     cordova.plugins.backgroundMode.disableWebViewOptimizations();
                 });
@@ -550,114 +477,70 @@ const PrinterService = {
             if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
                 cordova.plugins.notification.local.requestPermission(function(granted){});
                 
-                // Saluran khusus Alarm/Telepon
-                cordova.plugins.notification.local.addChannel({
-                    id: 'panggilan_kasir',
-                    name: 'Alarm Kasir',
-                    importance: 5, // MAX
-                    vibration: true,
-                    wakeup: true,
-                    bypassDnd: true,
-                    sound: 'res://platform_default', // Menggunakan suara alarm sistem
-                    lockscreenVisibility: 1
-                });
-
-                // Listener Trigger Alarm
+                // Listener saat alarm trigger (bahkan saat background/closed)
                 cordova.plugins.notification.local.on('trigger', function (notification) {
-                    // Paksa bangunkan HP dan bawa ke depan
                     if (cordova.plugins.backgroundMode) {
                         cordova.plugins.backgroundMode.wakeUp();
                         cordova.plugins.backgroundMode.unlock();
                         cordova.plugins.backgroundMode.moveToForeground();
                     }
-                    triggerAlarmCall(notification.text, notification.id);
+                    
+                    // Mainkan suara pesanan
+                    playTTS(notification.text);
+                    
+                    // Munculkan popup detail pesanan jika ada data poId
+                    if (notification.data && notification.data.poId) {
+                        showPOAction(notification.data.poId);
+                    }
                 });
 
+                // Listener saat notifikasi diklik
                 cordova.plugins.notification.local.on('click', function (notification) {
                     if (cordova.plugins.backgroundMode) cordova.plugins.backgroundMode.moveToForeground();
-                    triggerAlarmCall(notification.text, notification.id);
-                    cordova.plugins.notification.local.cancel(notification.id);
+                    playTTS(notification.text);
+                    if (notification.data && notification.data.poId) {
+                        showPOAction(notification.data.poId);
+                    }
                 });
             }
         }, false);
     },
 
     connect: function() {
-        if (this.isConnected) {
-            if(confirm('Putuskan koneksi printer?')) this.disconnect();
-            return;
-        }
-
-        if (!this.isCordovaReady && typeof window.bluetoothSerial === 'undefined') {
-            alert("Plugin Bluetooth belum siap atau tidak terinstal. Pastikan membuka aplikasi di Android.");
-            return;
-        }
-
-        window.bluetoothSerial.isEnabled(
-            () => { this.scanPaired(); },
-            () => {
-                alert("Bluetooth mati. Harap aktifkan Bluetooth di HP Anda terlebih dahulu!");
-                window.bluetoothSerial.enable(
-                    () => this.scanPaired(),
-                    () => alert("Gagal mengaktifkan Bluetooth.")
-                );
-            }
-        );
+        if (this.isConnected) { if(confirm('Putuskan koneksi printer?')) this.disconnect(); return; }
+        if (!this.isCordovaReady && typeof window.bluetoothSerial === 'undefined') return alert("Plugin Bluetooth belum siap. Gunakan APK.");
+        window.bluetoothSerial.isEnabled(() => this.scanPaired(), () => {
+            alert("Bluetooth mati. Harap aktifkan!");
+            window.bluetoothSerial.enable(() => this.scanPaired(), () => alert("Gagal aktifkan."));
+        });
     },
 
     scanPaired: function() {
         document.getElementById('btModal').style.display = 'flex';
         document.getElementById('btLoading').style.display = 'block';
-        document.getElementById('btDeviceList').innerHTML = '';
-
-        window.bluetoothSerial.list(
-            (devices) => {
-                this.showDeviceList(devices);
-                document.getElementById('btLoading').style.display = 'none';
-            },
-            (err) => {
-                document.getElementById('btLoading').style.display = 'none';
-                alert("Gagal mengambil paired devices: " + err);
-            }
-        );
+        window.bluetoothSerial.list((devices) => {
+            this.showDeviceList(devices);
+            document.getElementById('btLoading').style.display = 'none';
+        }, (err) => alert("Gagal list devices."));
     },
 
     scanUnpaired: function() {
         document.getElementById('btLoading').style.display = 'block';
-        document.getElementById('btLoading').innerText = "Sedang mencari perangkat sekitar (10-15 detik)...";
-        document.getElementById('btDeviceList').innerHTML = '';
-
-        window.bluetoothSerial.discoverUnpaired(
-            (devices) => {
-                this.showDeviceList(devices);
-                document.getElementById('btLoading').style.display = 'none';
-                document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; 
-            },
-            (err) => {
-                document.getElementById('btLoading').style.display = 'none';
-                document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; 
-                alert("Gagal scan sekitar. Pastikan Anda mengklik 'IZINKAN' pada popup lokasi/nearby devices.");
-            }
-        );
+        window.bluetoothSerial.discoverUnpaired((devices) => {
+            this.showDeviceList(devices);
+            document.getElementById('btLoading').style.display = 'none';
+        }, (err) => alert("Gagal scan sekitar."));
     },
 
     showDeviceList: function(devices) {
-        document.getElementById('btModal').style.display = 'flex';
         const list = document.getElementById('btDeviceList');
         list.innerHTML = '';
-
-        if (devices.length === 0) {
-            list.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;line-height:1.6">Tidak ada perangkat ditemukan.<br>Coba klik tombol <strong>Scan Sekitar</strong> di bawah.</div>';
-            return;
-        }
-
-        const uniqueDevices = Array.from(new Set(devices.map(a => a.id))).map(id => devices.find(a => a.id === id));
-
-        uniqueDevices.forEach(d => {
+        if (devices.length === 0) { list.innerHTML = '<div style="padding:20px;text-align:center">Kosong.</div>'; return; }
+        const unique = Array.from(new Set(devices.map(a => a.id))).map(id => devices.find(a => a.id === id));
+        unique.forEach(d => {
             const item = document.createElement('div');
             item.className = 'bt-device-item';
-            const dispName = d.name ? d.name : (d.id ? d.id : 'Unknown Device');
-            item.innerHTML = `<span>${dispName}</span> <small style="color:#aaa">${d.address || d.id}</small>`;
+            item.innerHTML = `<span>${d.name || d.id}</span> <small>${d.address || d.id}</small>`;
             item.onclick = () => this.connectToDevice(d.address || d.id);
             list.appendChild(item);
         });
@@ -665,1164 +548,442 @@ const PrinterService = {
 
     connectToDevice: function(address) {
         document.getElementById('btModal').style.display = 'none';
-        window.bluetoothSerial.connect(address, () => {
-            this.onConnected(address);
-        }, (err) => {
-            alert("Gagal koneksi ke " + address + ": " + err);
-        });
+        window.bluetoothSerial.connect(address, () => this.onConnected(address), (err) => alert("Gagal koneksi."));
     },
 
     onConnected: function(addr) {
         this.isConnected = true;
         this.macAddress = addr;
         const btn = document.getElementById('btnConnect');
-        btn.classList.remove('disconnected');
-        btn.classList.add('connected');
+        btn.classList.remove('disconnected'); btn.classList.add('connected');
         alert("Printer Terhubung!");
     },
 
-    disconnect: function() {
-        window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected());
-    },
+    disconnect: function() { window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected()); },
 
     onDisconnected: function() {
         this.isConnected = false;
         const btn = document.getElementById('btnConnect');
-        btn.classList.remove('connected');
-        btn.classList.add('disconnected');
-        alert("Printer Terputus");
+        btn.classList.remove('connected'); btn.classList.add('disconnected');
     },
 
     printReceipt: function() {
-        if (!this.isConnected) {
-            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
-            return;
-        }
-
+        if (!this.isConnected) return alert("Koneksikan printer!");
         const tableNum = document.getElementById('tableNum').value || '-';
-        const note = document.getElementById('orderNote').value || '-';
-        const paid = parseInt(document.getElementById('paidInput').value) || 0;
         const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-        const change = paid - total;
-        const dateNow = new Date().toLocaleString('id-ID');
         const rp = (n) => Number(n).toLocaleString('id-ID');
-
-        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
-        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
-        
-        const pair = (left, right, width = 32) => {
-            const spaces = Math.max(0, width - left.length - right.length);
-            return left + " ".repeat(spaces) + right;
-        };
-
-        let cmds = "";
-        
-        cmds += this.ESC.RESET;
-        cmds += this.ESC.ALIGN_CENTER;
-        cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
-        cmds += "Telp/WA: 0852 3141 3408" + this.ESC.FEED;
-        cmds += this.ESC.FEED;
-        
-        cmds += this.ESC.ALIGN_LEFT;
-        cmds += `${dateNow}` + this.ESC.FEED;
-        cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
-        if(note !== '-') cmds += `Catatan: ${note}` + this.ESC.FEED;
-        cmds += "--------------------------------" + this.ESC.FEED;
-        
-        cmds += this.ESC.FONT_NORMAL;
-        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
-        cmds += "--------------------------------" + this.ESC.FEED;
-        
-        cart.forEach(item => {
-            let suffix = "";
-            let lowerId = item.id.toLowerCase();
-            let lowerLabel = item.label.toLowerCase();
-            
-            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
-            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
-            
-            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
-            let numStr = item.qty.toString();
-            let alignNum = ("   " + numStr).slice(-3);
-            let alignSuf = suffix ? " " + suffix : "  ";
-            let qtyFinal = alignNum + alignSuf; 
-
-            let nameStr = padRight(cleanLabel, 17);
-            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
-            
-            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
-            cmds += this.ESC.FEED;
-        });
-
-        cmds += "--------------------------------" + this.ESC.FEED;
-        cmds += this.ESC.BOLD_ON;
-        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
-        cmds += this.ESC.BOLD_OFF;
-        
-        cmds += pair("Bayar", "Rp " + rp(paid)) + this.ESC.FEED;
-        cmds += pair("Kembali", "Rp " + rp(change < 0 ? 0 : change)) + this.ESC.FEED;
-
-        cmds += this.ESC.FEED;
-        cmds += this.ESC.ALIGN_CENTER;
-        cmds += "Terima Kasih" + this.ESC.FEED;
-        cmds += "Kunjungi: menucaksabar.my.id" + this.ESC.FEED;
-        cmds += "Simpan struk ini sbg bukti" + this.ESC.FEED;
-        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
-
-        const img = new Image();
-        img.src = this.LOGO_URL;
-        
-        img.onload = () => {
-            try {
-                const imgHexBuffer = EscPosHelper.getImageData(img);
-                const textBuffer = new Uint8Array(cmds.length);
-                for (let i = 0; i < cmds.length; i++) textBuffer[i] = cmds.charCodeAt(i);
-
-                const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
-                const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
-                
-                combined.set(centerCmd, 0);
-                combined.set(imgHexBuffer, centerCmd.length);
-                combined.set(textBuffer, centerCmd.length + imgHexBuffer.length);
-
-                window.bluetoothSerial.write(combined.buffer, 
-                    () => console.log("Print Img+Text Success"), 
-                    (err) => alert("Gagal Print: " + err)
-                );
-            } catch (e) {
-                alert("Gagal memproses gambar: " + e);
-                window.bluetoothSerial.write(cmds, null, null);
-            }
-        };
-
-        img.onerror = () => {
-            const backupHeader = this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED + cmds;
-            window.bluetoothSerial.write(backupHeader, 
-                () => alert("Logo tidak ditemukan, mencetak teks standar."), 
-                (err) => alert("Gagal print: " + err)
-            );
-        };
+        let cmds = this.ESC.RESET + this.ESC.ALIGN_CENTER + "WARUNG CAKSABAR\n\n" + this.ESC.ALIGN_LEFT + "MEJA: " + tableNum + "\n--------------------------------\n";
+        cart.forEach(item => { cmds += (item.label + "                ").substring(0, 17) + ("   " + item.qty).slice(-3) + "  " + (rp(item.qty * item.price) + "          ").substring(0, 10) + "\n"; });
+        cmds += "--------------------------------\nTOTAL: " + rp(total) + "\n\n\n\n";
+        window.bluetoothSerial.write(cmds, null, null);
     },
 
     printShortReceipt: function() {
-        if (!this.isConnected) {
-            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
-            return;
-        }
-
+        if (!this.isConnected) return alert("Koneksikan printer!");
         const tableNum = document.getElementById('tableNum').value || '-';
-        const note = document.getElementById('orderNote').value || '-';
-        const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-        const dateNow = new Date().toLocaleString('id-ID');
-        const rp = (n) => Number(n).toLocaleString('id-ID');
-
-        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
-        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
-        
-        const pair = (left, right, width = 32) => {
-            const spaces = Math.max(0, width - left.length - right.length);
-            return left + " ".repeat(spaces) + right;
-        };
-
-        let cmds = "";
-        
-        cmds += this.ESC.RESET;
-        cmds += this.ESC.ALIGN_LEFT;
-        cmds += `${dateNow}` + this.ESC.FEED;
-        cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
-        if(note !== '-') cmds += `Catatan: ${note}` + this.ESC.FEED;
-        cmds += "--------------------------------" + this.ESC.FEED;
-        
-        cmds += this.ESC.FONT_NORMAL;
-        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
-        cmds += "--------------------------------" + this.ESC.FEED;
-        
-        cart.forEach(item => {
-            let suffix = "";
-            let lowerId = item.id.toLowerCase();
-            let lowerLabel = item.label.toLowerCase();
-            
-            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
-            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
-            
-            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
-            let numStr = item.qty.toString();
-            let alignNum = ("   " + numStr).slice(-3);
-            let alignSuf = suffix ? " " + suffix : "  ";
-            let qtyFinal = alignNum + alignSuf; 
-
-            let nameStr = padRight(cleanLabel, 17);
-            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
-            
-            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
-            cmds += this.ESC.FEED; 
-        });
-
-        cmds += "--------------------------------" + this.ESC.FEED;
-        cmds += this.ESC.BOLD_ON;
-        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
-        cmds += this.ESC.BOLD_OFF;
-        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
-
-        window.bluetoothSerial.write(cmds, 
-            () => console.log("Print Pesanan Success"), 
-            (err) => alert("Gagal print pesanan: " + err)
-        );
-    },
-
-    printPreOrder: function(po) {
-        if (!this.isConnected) {
-            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
-            return;
-        }
-
-        const total = po.total;
-        const rp = (n) => Number(n).toLocaleString('id-ID');
-        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
-        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
-        
-        const pair = (left, right, width = 32) => {
-            const spaces = Math.max(0, width - left.length - right.length);
-            return left + " ".repeat(spaces) + right;
-        };
-
-        let cmds = "";
-        
-        cmds += this.ESC.RESET;
-        cmds += this.ESC.ALIGN_CENTER;
-        cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
-        cmds += "Telp/WA: 0852 3141 3408" + this.ESC.FEED;
-        cmds += this.ESC.FEED;
-        
-        cmds += this.ESC.ALIGN_CENTER;
-        cmds += this.ESC.BOLD_ON + "*** STRUK PRE-ORDER ***" + this.ESC.BOLD_OFF + this.ESC.FEED;
-        cmds += this.ESC.FEED;
-
-        cmds += this.ESC.ALIGN_LEFT;
-        cmds += `Tanggal: ${new Date().toLocaleString('id-ID')}` + this.ESC.FEED;
-        cmds += this.ESC.BOLD_ON + `NAMA  : ${po.name}` + this.ESC.FEED;
-        cmds += `AMBIL : ${po.time}` + this.ESC.BOLD_OFF + this.ESC.FEED;
-        if(po.note && po.note !== '-') cmds += `Catatan: ${po.note}` + this.ESC.FEED;
-        cmds += "--------------------------------" + this.ESC.FEED;
-        
-        cmds += this.ESC.FONT_NORMAL;
-        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
-        cmds += "--------------------------------" + this.ESC.FEED;
-        
-        po.items.forEach(item => {
-            let suffix = "";
-            let lowerId = item.id.toLowerCase();
-            let lowerLabel = item.label.toLowerCase();
-            
-            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
-            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
-            
-            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
-            let numStr = item.qty.toString();
-            let alignNum = ("   " + numStr).slice(-3);
-            let alignSuf = suffix ? " " + suffix : "  ";
-            let qtyFinal = alignNum + alignSuf; 
-
-            let nameStr = padRight(cleanLabel, 17);
-            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
-            
-            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
-            cmds += this.ESC.FEED;
-        });
-
-        cmds += "--------------------------------" + this.ESC.FEED;
-        cmds += this.ESC.BOLD_ON;
-        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
-        cmds += this.ESC.BOLD_OFF;
-
-        cmds += this.ESC.FEED;
-        cmds += this.ESC.ALIGN_CENTER;
-        cmds += "Harap bawa struk ini sbg" + this.ESC.FEED;
-        cmds += "bukti pengambilan Pre-Order" + this.ESC.FEED;
-        cmds += "menucaksabar.my.id" + this.ESC.FEED;
-        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
-
-        const img = new Image();
-        img.src = this.LOGO_URL;
-        
-        img.onload = () => {
-            try {
-                const imgHexBuffer = EscPosHelper.getImageData(img);
-                const textBuffer = new Uint8Array(cmds.length);
-                for (let i = 0; i < cmds.length; i++) textBuffer[i] = cmds.charCodeAt(i);
-
-                const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
-                const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
-                
-                combined.set(centerCmd, 0);
-                combined.set(imgHexBuffer, centerCmd.length);
-                combined.set(textBuffer, centerCmd.length + imgHexBuffer.length);
-
-                window.bluetoothSerial.write(combined.buffer, 
-                    () => console.log("Print PreOrder Success"), 
-                    (err) => alert("Gagal Print: " + err)
-                );
-            } catch (e) {
-                alert("Gagal memproses gambar: " + e);
-                window.bluetoothSerial.write(cmds, null, null);
-            }
-        };
-
-        img.onerror = () => {
-            const backupHeader = this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED + cmds;
-            window.bluetoothSerial.write(backupHeader, 
-                () => alert("Logo tidak ditemukan, mencetak teks standar."), 
-                (err) => alert("Gagal print: " + err)
-            );
-        };
+        let cmds = this.ESC.RESET + "PESANAN DAPUR\nMEJA: " + tableNum + "\n--------------------------------\n";
+        cart.forEach(item => { cmds += (item.label + "                    ").substring(0, 20) + " x" + item.qty + "\n"; });
+        cmds += "--------------------------------\n\n\n\n";
+        window.bluetoothSerial.write(cmds, null, null);
     }
 };
 
 const DATA_MENU = [
-  { id: 'sk_tusuk', img: '', keywords: ['sate kambing', 'kambing'], label: 'Sate Kambing (Tusuk)', price: 2400, category: 'food', visible: false },
   { id: 'sk_porsi', img: 'sk_porsi.webp', keywords: ['sate kambing porsi'], label: 'Sate Kambing (Porsi)', price: 24000, category: 'food', visible: true },
-  { id: 'sk_nl_tusuk', img: '', keywords: ['kambing tanpa lemak', 'no lemak', 'sk polos', 'kambing tl'], label: 'Sate Kambing TL (Tusuk)', price: 2600, category: 'food', visible: false },
   { id: 'sk_nl_porsi', img: 'sk_nl_porsi.webp', keywords: ['kambing tanpa lemak porsi'], label: 'Sate Kambing TL (Porsi)', price: 26000, category: 'food', visible: true },
-  { id: 'sa_tusuk', img: '', keywords: ['sate ayam', 'ayam'], label: 'Sate Ayam (Tusuk)', price: 1200, category: 'food', visible: false },
   { id: 'sa_porsi', img: 'sa_porsi.webp', keywords: ['sate ayam porsi'], label: 'Sate Ayam (Porsi)', price: 12000, category: 'food', visible: true },
-  { id: 'gule', img: 'gule.webp', keywords: ['gule', 'gulai'], label: 'Gule (Porsi)', price: 24000, category: 'food', visible: true, isFlexible: true },
-  { id: 'kepala_kambing', img: 'kepala_kambing.webp', keywords: ['kepala kambing', 'ndas', 'kepala'], label: 'Kepala Kambing', price: 0, category: 'food', visible: true, needsPriceInput: true, isFlexible: true },
-  { id: 'nasi_gule', img: 'nasi_gule.webp', keywords: ['nasi gule', 'nasi gulai'], label: 'Nasi Gule', price: 14000, category: 'food', visible: true },
-  { id: 'nasi', img: 'nasi.webp', keywords: ['nasi', 'sego'], label: 'Nasi Putih', price: 3000, category: 'food', visible: true, isFlexible: true },
-  { id: 'kerupuk', img: 'kerupuk.webp', keywords: ['kerupuk', 'rupuk'], label: 'Kerupuk', price: 1000, category: 'food', visible: true },
+  { id: 'gule', img: 'gule.webp', keywords: ['gule'], label: 'Gule (Porsi)', price: 24000, category: 'food', visible: true, isFlexible: true },
+  { id: 'kepala_kambing', img: 'kepala_kambing.webp', keywords: ['kepala'], label: 'Kepala Kambing', price: 0, category: 'food', visible: true, needsPriceInput: true, isFlexible: true },
+  { id: 'nasi', img: 'nasi.webp', keywords: ['nasi'], label: 'Nasi Putih', price: 3000, category: 'food', visible: true, isFlexible: true },
   { id: 'es_teh', img: 'es_teh.webp', keywords: ['es teh'], label: 'Es Teh', price: 3000, category: 'drink', visible: true },
-  { id: 'es_jeruk', img: 'es_jeruk.webp', keywords: ['es jeruk'], label: 'Es Jeruk', price: 3000, category: 'drink', visible: true },
-  { id: 'teh_anget', img: 'teh_anget.webp', keywords: ['teh anget', 'teh hangat'], label: 'Teh Anget', price: 3000, category: 'drink', visible: true },
-  { id: 'jeruk_anget', img: 'jeruk_anget.webp', keywords: ['jeruk anget', 'jeruk hangat'], label: 'Jeruk Anget', price: 3000, category: 'drink', visible: true }
+  { id: 'es_jeruk', img: 'es_jeruk.webp', keywords: ['es jeruk'], label: 'Es Jeruk', price: 3000, category: 'drink', visible: true }
 ];
 
 let cart = [];
 let transactions = JSON.parse(localStorage.getItem('trx_cak_sabar') || '[]');
 let preOrders = JSON.parse(localStorage.getItem('po_cak_sabar') || '[]');
-const formatRp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+let currentItemIdForPrice = null;
 
 function showPreOrderModal() {
-    if (cart.length === 0) return alert('Keranjang masih kosong!');
-    document.getElementById('poNameInput').value = '';
-    const now = new Date();
-    now.setHours(now.getHours() + 1);
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById('poTimeInput').value = `${hh}:${mm}`;
+    if (cart.length === 0) return alert('Keranjang kosong!');
     document.getElementById('preOrderModal').style.display = 'flex';
 }
 
 function savePreOrder() {
     const name = document.getElementById('poNameInput').value.trim();
     const time = document.getElementById('poTimeInput').value;
-    const note = document.getElementById('orderNote').value || '-';
-    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-
-    if (!name || !time) return alert('Nama dan Waktu pengambilan harus diisi!');
+    if (!name || !time) return alert('Nama dan Waktu harus diisi!');
 
     const uniqueId = Math.floor(Date.now() / 1000) % 10000000;
+    const itemDetails = cart.map(i => `${i.qty} ${i.label}`).join(', ');
+    const speechMsg = `Perhatian! Pesanan atas nama ${name} jam ${time}. Detail: ${itemDetails}. Harap segera diproses.`;
 
     const po = {
         id: uniqueId,
         name: name,
         time: time,
         date: new Date().toLocaleDateString('id-ID'),
-        note: note,
         items: [...cart],
-        total: total,
-        alarm30Done: false,
-        alarm15Done: false,
-        alarmNowDone: false
+        total: cart.reduce((a, b) => a + (b.price * b.qty), 0),
+        triggered30: false,
+        triggered15: false
     };
 
     preOrders.push(po);
-    preOrders.sort((a, b) => a.time.localeCompare(b.time));
     localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
 
-    // JADWALKAN ALARM NATIVE SECARA AGRESIF
-    const [poHour, poMin] = time.split(':').map(Number);
-    const poDate = new Date();
-    poDate.setHours(poHour, poMin, 0, 0);
-    
-    // Penjadwalan 30 menit sebelumnya (Notif Biasa)
-    const thirtyMinsBefore = new Date(poDate.getTime() - 30 * 60000);
-    
-    if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-        
-        // 1. Notif Persiapan (30 Menit)
-        if (thirtyMinsBefore > new Date()) {
-            cordova.plugins.notification.local.schedule({
-                id: uniqueId + 30,
-                channel: 'panggilan_kasir',
-                title: '⏳ Persiapan Pre-Order',
-                text: `30 Menit lagi: Pesanan atas nama ${name}`,
-                trigger: { at: thirtyMinsBefore },
-                priority: 1,
-                vibrate: true
-            });
-        }
+    // Schedule Cordova Notifications
+    if (typeof cordova !== 'undefined' && cordova.plugins.notification.local) {
+        const [h, m] = time.split(':').map(Number);
+        const poTime = new Date(); poTime.setHours(h, m, 0, 0);
 
-        // 2. Alarm Utama (Waktu Pengambilan) - Seperti Telepon
-        if (poDate > new Date()) {
-            cordova.plugins.notification.local.schedule({
-                id: uniqueId,
-                channel: 'panggilan_kasir',
-                title: '🚨 PESANAN HARUS DIAMBIL!',
-                text: `WAKTUNYA! Pre-Order atas nama ${name}`,
-                trigger: { at: poDate },
-                foreground: true,
-                wakeup: true,
-                lockscreen: true,
-                sticky: true, // Tidak bisa di-swipe
-                priority: 2,  // MAX PRIORITY
-                sound: 'res://platform_default',
-                vibrate: true,
-                actions: [{ id: 'buka', title: '👀 BUKA KASIR SEKARANG' }]
-            });
-        }
+        const triggers = [
+            { id: uniqueId + 30, offset: 30, title: 'Persiapan Pre-Order (30 Menit)' },
+            { id: uniqueId + 15, offset: 15, title: 'Persiapan Pre-Order (15 Menit)' },
+            { id: uniqueId, offset: 0, title: 'Waktu Pengambilan Pre-Order!' }
+        ];
+
+        triggers.forEach(t => {
+            const triggerAt = new Date(poTime.getTime() - t.offset * 60000);
+            if (triggerAt > new Date()) {
+                cordova.plugins.notification.local.schedule({
+                    id: t.id,
+                    channel: 'panggilan_kasir',
+                    title: t.title,
+                    text: speechMsg,
+                    trigger: { at: triggerAt },
+                    data: { poId: po.id }, // Kirim ID untuk auto-popup
+                    foreground: true,
+                    wakeup: true,
+                    priority: 2,
+                    sound: 'res://platform_default'
+                });
+            }
+        });
     }
 
-    resetCart();
-    closeModal('preOrderModal');
-    updatePOBadge();
-    alert(`Pre Order atas nama ${name} disimpan untuk jam ${time}`);
-}
-
-function showPreOrderList() {
-    renderPreOrderList();
-    document.getElementById('preOrderListModal').style.display = 'flex';
-}
-
-function updatePOBadge() {
-    const today = new Date().toLocaleDateString('id-ID');
-    const activePO = preOrders.filter(p => p.date === today);
-    const badge = document.getElementById('poBadgeCount');
-    if (badge) {
-        if (activePO.length > 0) {
-            badge.textContent = activePO.length;
-            badge.style.display = 'block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-}
-
-function renderPreOrderList() {
-    const container = document.getElementById('poListContainer');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const today = new Date().toLocaleDateString('id-ID');
-    const activePO = preOrders.filter(p => p.date === today);
-
-    if (activePO.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-style:italic;">Tidak ada Pre Order hari ini</div>';
-        return;
-    }
-
-    activePO.forEach((po, index) => {
-        const itemStr = po.items.map(i => `${i.label} (x${i.qty})`).join(', ');
-        const card = document.createElement('div');
-        card.style.cssText = 'background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; position:relative;';
-        
-        card.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
-                <div>
-                    <div style="font-weight:800; color:#1e293b; font-size:16px;">${po.name}</div>
-                    <div style="color:#4338ca; font-weight:700; font-size:14px; margin-top:2px;">🕒 Ambil Jam: ${po.time}</div>
-                </div>
-                <div style="font-weight:800; color:var(--accent);">${formatRp(po.total)}</div>
-            </div>
-            <div style="font-size:12px; color:#64748b; line-height:1.4; margin-bottom:12px;">
-                ${itemStr}
-                ${po.note !== '-' ? `<br><span style="color:#d97706">Catatan: ${po.note}</span>` : ''}
-            </div>
-            <div style="display:flex; gap:8px; margin-bottom: 8px;">
-                <button class="btn secondary" style="margin:0; padding:10px; font-size:13px; flex:1; background:#f0fdf4; color:#166534; border-color:#bbf7d0;" onclick="printPO(${po.id})">🖨️ Cetak Struk Pre Order</button>
-            </div>
-            <div style="display:flex; gap:8px;">
-                <button class="btn" style="margin:0; padding:10px; font-size:13px; flex:1;" onclick="processPreOrder(${po.id})">Selesaikan / Bayar</button>
-                <button class="btn secondary" style="margin:0; padding:10px; font-size:13px; color:var(--red); border-color:#fecaca; background:#fef2f2;" onclick="deletePreOrder(${po.id})">Batal</button>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function printPO(id) {
-    const po = preOrders.find(p => p.id === id);
-    if(po) PrinterService.printPreOrder(po);
-}
-
-function processPreOrder(id) {
-    if (cart.length > 0) {
-        if (!confirm('Keranjang saat ini tidak kosong. Menarik Pre Order akan menimpa keranjang. Lanjutkan?')) return;
-    }
-    const poIndex = preOrders.findIndex(p => p.id === id);
-    if (poIndex === -1) return;
-    const po = preOrders[poIndex];
-
-    cart = [...po.items];
-    document.getElementById('orderNote').value = po.note !== '-' ? po.note : '';
-    
-    if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-        cordova.plugins.notification.local.cancel(po.id);
-        cordova.plugins.notification.local.cancel(po.id + 30);
-    }
-
-    preOrders.splice(poIndex, 1);
-    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
-
-    renderCart();
-    updatePOBadge();
-    closeModal('preOrderListModal');
-    showCheckout();
-}
-
-function deletePreOrder(id) {
-    if(!confirm('Yakin ingin membatalkan dan menghapus Pre Order ini?')) return;
-    
-    if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-        cordova.plugins.notification.local.cancel(id);
-        cordova.plugins.notification.local.cancel(id + 30);
-    }
-
-    preOrders = preOrders.filter(p => p.id !== id);
-    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
-    renderPreOrderList();
-    updatePOBadge();
-}
-
-let alarmInterval; 
-
-function startAlarmChecker() {
-    setInterval(() => {
-        checkAlarms();
-    }, 15000);
+    resetCart(); closeModal('preOrderModal'); updatePOBadge();
+    alert(`Pre-Order ${name} jam ${time} disimpan.`);
 }
 
 function checkAlarms() {
-    const today = new Date().toLocaleDateString('id-ID');
     const now = new Date();
-    
+    const today = now.toLocaleDateString('id-ID');
+    let updated = false;
+
     preOrders.forEach(po => {
         if (po.date !== today) return;
+        const [h, m] = po.time.split(':').map(Number);
+        const poDate = new Date(); poDate.setHours(h, m, 0, 0);
+        const diff = (poDate - now) / 60000;
+        const details = po.items.map(i => `${i.qty} ${i.label}`).join(', ');
+        const speechMsg = `Peringatan! Pesanan atas nama ${po.name} jam ${po.time}. Detail: ${details}.`;
 
-        const [poHour, poMin] = po.time.split(':').map(Number);
-        const poDate = new Date();
-        poDate.setHours(poHour, poMin, 0, 0);
-
-        const diffMs = poDate - now;
-        const diffMins = Math.floor(diffMs / 60000);
-
-        // Hanya trigger jika aplikasi terbuka (JS loop)
-        if (diffMins === 0 && !po.alarmNowDone) {
-            po.alarmNowDone = true;
-            triggerAlarmCall(`Waktu pengambilan! Pesanan ${po.name} harus disiapkan.`, po.id);
-            localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
+        if (diff <= 30 && diff > 29 && !po.triggered30) {
+            playTTS(speechMsg); showPOAction(po.id); po.triggered30 = true; updated = true;
+        } else if (diff <= 15 && diff > 14 && !po.triggered15) {
+            playTTS(speechMsg); showPOAction(po.id); po.triggered15 = true; updated = true;
         }
     });
+
+    if (updated) localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
 }
 
-function triggerAlarmCall(text, id) {
-    document.getElementById('alarmCallText').innerText = text;
-    document.getElementById('alarmCallModal').style.display = 'flex';
+function showPOAction(poId) {
+    const po = preOrders.find(p => p.id === poId);
+    if (!po) return;
+
+    const detailsEl = document.getElementById('poActionDetails');
+    detailsEl.innerHTML = `
+        <div style="font-weight:700; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:4px">
+            Pemesan: ${po.name} (${po.time})
+        </div>
+        ${po.items.map(i => `<div>• ${i.label} (x${i.qty})</div>`).join('')}
+    `;
+
+    const btn = document.getElementById('btnProcessPO');
+    btn.onclick = () => confirmProcessPO(po.id);
+
+    document.getElementById('poActionModal').style.display = 'flex';
+}
+
+function confirmProcessPO(poId) {
+    const poIndex = preOrders.findIndex(p => p.id === poId);
+    if (poIndex === -1) return;
+    const po = preOrders[poIndex];
+
+    // Masukan ke keranjang
+    cart = [...po.items];
+    renderCart();
+
+    // Hapus dari daftar preorder
+    preOrders.splice(poIndex, 1);
+    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
     
-    if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500, 1000]);
+    // Batalkan notifikasi sisa
+    if (typeof cordova !== 'undefined' && cordova.plugins.notification.local) {
+        cordova.plugins.notification.local.cancel([poId, poId + 15, poId + 30]);
+    }
 
-    playTTS(text);
-
-    clearInterval(alarmInterval);
-    // LOOP SUARA TERUS MENERUS
-    alarmInterval = setInterval(() => {
-        playTTS(text);
-        if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
-    }, 6000);
+    updatePOBadge();
+    closeModal('poActionModal');
+    alert("Pesanan berhasil dimasukkan ke keranjang dan dihapus dari Pre-Order.");
 }
 
 function playTTS(text) {
     if (typeof window.TTS !== 'undefined') {
-        window.TTS.speak({
-            text: text,
-            locale: 'id-ID',
-            rate: 1.0
-        }).catch(function(reason) {
-            window.TTS.speak({ text: text, locale: 'id_ID', rate: 1.0 });
-        });
+        window.TTS.speak({ text: text, locale: 'id-ID', rate: 0.9 });
     } else if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'id-ID';
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
-    }
-}
-
-function dismissAlarmCall() {
-    document.getElementById('alarmCallModal').style.display = 'none';
-    clearInterval(alarmInterval);
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    if (navigator.vibrate) navigator.vibrate(0); 
-    
-    if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-        cordova.plugins.notification.local.cancelAll();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'id-ID'; u.rate = 0.9; window.speechSynthesis.speak(u);
     }
 }
 
 function renderMenuGrid() {
-  const foodContainer = document.getElementById('foodGrid');
-  const drinkContainer = document.getElementById('drinkGrid');
-  foodContainer.innerHTML = '';
-  drinkContainer.innerHTML = '';
-
+  const f = document.getElementById('foodGrid'), d = document.getElementById('drinkGrid');
+  if(!f || !d) return;
+  f.innerHTML = ''; d.innerHTML = '';
   DATA_MENU.forEach(item => {
     if (!item.visible) return;
     const el = document.createElement('div');
-    el.className = 'menu-item';
-    el.id = `item_${item.id}`;
-    el.onclick = (e) => handleCardClick(item.id, e);
-    
-    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#e2e8f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#94a3b8">Foto</text></svg>`;
-    const placeholderImg = `data:image/svg+xml;utf8,${encodeURIComponent(svgStr)}`;
-
-    el.innerHTML = `
-      <img src="${item.img}" class="menu-img" alt="${item.label}" onerror="this.src='${placeholderImg}'">
-      <div class="menu-info">
-         <div class="m-name">${item.label}</div>
-         <div class="m-price-sm">${item.price > 0 ? formatRp(item.price) : '<span style="color:#f59e0b">Manual</span>'}</div>
-      </div>
-      <div class="menu-controls-wrapper" id="controls_${item.id}"></div>
-    `;
-
-    if (item.category === 'food') foodContainer.appendChild(el);
-    else drinkContainer.appendChild(el);
+    el.className = 'menu-item'; el.id = `item_${item.id}`;
+    el.onclick = () => item.needsPriceInput ? openCustomPriceModal(item.id) : addToCart(item);
+    el.innerHTML = `<img src="${item.img}" class="menu-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22><rect width=%22400%22 height=%22300%22 fill=%22%23e2e8f0%22/></svg>'">
+      <div class="menu-info"><div class="m-name">${item.label}</div><div class="m-price-sm">${item.price>0?formatRp(item.price):'Manual'}</div></div>
+      <div class="menu-controls-wrapper" id="controls_${item.id}"></div>`;
+    (item.category === 'food' ? f : d).appendChild(el);
   });
   updateMenuGridUI();
-}
-
-function handleCardClick(itemId, event) {
-    if (event && event.target.closest('.qty-controls')) return;
-
-    const item = DATA_MENU.find(i => i.id === itemId);
-    const totalQty = cart.filter(c => c.id === itemId).reduce((sum, c) => sum + c.qty, 0);
-    
-    if (totalQty === 0 || item.needsPriceInput) {
-        if (item.needsPriceInput) openCustomPriceModal(item.id);
-        else addToCart(item, 1);
-    } else {
-        addToCart(item, 1);
-    }
 }
 
 function updateMenuGridUI() {
   DATA_MENU.forEach(item => {
-    const controlContainer = document.getElementById(`controls_${item.id}`);
-    const menuItemCard = document.getElementById(`item_${item.id}`);
-    if(!controlContainer || !menuItemCard) return;
-
-    const totalQty = cart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.qty, 0);
-
-    if (totalQty > 0) {
-      menuItemCard.classList.add('has-qty');
-      if(item.needsPriceInput) {
-          controlContainer.innerHTML = `
-            <div class="qty-controls" style="border:none; background:none; box-shadow:none; justify-content:center;">
-               <div class="qty-val" style="color:var(--accent); font-size:16px;">${totalQty} Masuk Keranjang</div>
-            </div>
-          `;
-      } else {
-          controlContainer.innerHTML = `
-            <div class="qty-controls">
-               <button class="qty-btn minus" onclick="event.stopPropagation(); decreaseFromCart('${item.id}', ${item.price})">−</button>
-               <div class="qty-val">${totalQty}</div>
-               <button class="qty-btn plus" onclick="event.stopPropagation(); addToCart(DATA_MENU.find(i=>i.id==='${item.id}'))">+</button>
-            </div>
-          `;
-      }
-    } else {
-      menuItemCard.classList.remove('has-qty');
-    }
+    const ctrl = document.getElementById(`controls_${item.id}`);
+    const card = document.getElementById(`item_${item.id}`);
+    if(!ctrl || !card) return;
+    const qty = cart.filter(c => c.id === item.id).reduce((s, c) => s + c.qty, 0);
+    if (qty > 0) {
+      card.classList.add('has-qty');
+      ctrl.innerHTML = `<div class="qty-controls">
+        <button class="qty-btn minus" onclick="event.stopPropagation(); decreaseFromCart('${item.id}', ${item.price})">−</button>
+        <div class="qty-val">${qty}</div>
+        <button class="qty-btn plus" onclick="event.stopPropagation(); addToCart(DATA_MENU.find(i=>i.id==='${item.id}'))">+</button>
+      </div>`;
+    } else card.classList.remove('has-qty');
   });
 }
 
-function addToCart(item, qty = 1, customPrice = null) {
-  const priceToUse = customPrice || item.price;
-  const existing = cart.find(c => c.id === item.id && c.price === priceToUse);
-  
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    cart.push({ id: item.id, label: item.label, price: priceToUse, qty: qty });
-  }
+function addToCart(item, qty = 1, p = null) {
+  const pr = p || item.price;
+  const ex = cart.find(c => c.id === item.id && c.price === pr);
+  ex ? ex.qty += qty : cart.push({ id: item.id, label: item.label, price: pr, qty: qty });
   renderCart();
 }
 
-function decreaseFromCart(itemId, price) {
-  const index = cart.findIndex(c => c.id === itemId && c.price === price);
-  if (index !== -1) {
-    cart[index].qty -= 1;
-    if (cart[index].qty <= 0) cart.splice(index, 1);
-  }
+function decreaseFromCart(id, p) {
+  const i = cart.findIndex(c => c.id === id && c.price === p);
+  if (i !== -1) { cart[i].qty--; if (cart[i].qty <= 0) cart.splice(i, 1); }
   renderCart();
 }
 
 function renderCart() {
-  const container = document.getElementById('cartList');
-  container.innerHTML = '';
-  let total = 0;
-
-  updateMenuGridUI();
-
-  if (cart.length === 0) {
-    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:30px;border:2px dashed #e2e8f0;border-radius:12px; background:#f8fafc">Keranjang masih kosong</div>';
-  } else {
-    cart.forEach((c, idx) => {
-      total += c.price * c.qty;
-      const row = document.createElement('div');
-      row.className = 'cart-row';
-      row.innerHTML = `
-        <div class="c-name">${c.label} <div style="color:#64748b; font-size:12px; font-weight:400">@${formatRp(c.price)}</div></div>
-        <div class="c-qty">x${c.qty}</div>
-        <div class="c-price">${formatRp(c.price * c.qty)}</div>
-        <button onclick="removeItem(${idx})" style="margin-left:8px;border:none;background:none;color:var(--red);font-weight:bold;cursor:pointer; padding:4px; font-size:16px;">×</button>
-      `;
-      container.appendChild(row);
+  const l = document.getElementById('cartList'); l.innerHTML = '';
+  let t = 0; updateMenuGridUI();
+  if (cart.length === 0) l.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;border:2px dashed #e2e8f0;border-radius:12px">Belum ada item</div>';
+  else {
+    cart.forEach((c, i) => {
+      t += c.price * c.qty;
+      l.innerHTML += `<div class="cart-row"><div class="c-name">${c.label}</div><div class="c-qty">x${c.qty}</div><div>${formatRp(c.price*c.qty)}</div><button onclick="removeItem(${i})" style="color:red;border:none;background:none;font-size:18px;cursor:pointer">×</button></div>`;
     });
   }
-  document.getElementById('cartTotal').textContent = formatRp(total);
+  document.getElementById('cartTotal').textContent = formatRp(t);
+  
+  // Update change display if payment modal is open
+  const paid = parseInt(document.getElementById('paidInput').value) || 0;
+  document.getElementById('changeDisplay').textContent = formatRp(Math.max(0, paid - t));
 }
 
-function removeItem(idx) {
-  cart.splice(idx, 1);
-  renderCart();
-}
+function removeItem(i) { cart.splice(i, 1); renderCart(); }
+function resetCart() { cart = []; renderCart(); document.getElementById('aiInput').value = ''; }
+function formatRp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-function resetCart() {
-  cart = [];
-  renderCart();
-  document.getElementById('aiInput').value = '';
-  document.getElementById('tableNum').value = '';
-  document.getElementById('orderNote').value = '';
-}
-
-let currentCustomItemId = null;
-
-function openCustomPriceModal(itemId) {
-    currentCustomItemId = itemId;
-    const item = DATA_MENU.find(i => i.id === itemId);
-    document.getElementById('customPriceTitle').textContent = `Harga ${item.label}`;
-    document.getElementById('customPriceInput').value = '';
-    document.getElementById('customPriceModal').style.display = 'flex';
-    setTimeout(() => document.getElementById('customPriceInput').focus(), 100);
+// UI Helpers for quick input
+function addNol(val) {
+    const input = document.getElementById('paidInput');
+    input.value = (input.value || '') + val;
+    renderCart();
 }
 
 function addNolCustom(val) {
     const input = document.getElementById('customPriceInput');
-    input.value = input.value + val;
-    input.focus();
+    input.value = (input.value || '') + val;
+}
+
+function openCustomPriceModal(itemId) {
+    currentItemIdForPrice = itemId;
+    const item = DATA_MENU.find(i => i.id === itemId);
+    document.getElementById('customPriceTitle').textContent = `Harga ${item.label}`;
+    document.getElementById('customPriceInput').value = '';
+    document.getElementById('customPriceModal').style.display = 'flex';
 }
 
 function confirmCustomPrice() {
-    if (!currentCustomItemId) return;
-    const priceVal = parseInt(document.getElementById('customPriceInput').value);
-    
-    if (!priceVal || priceVal <= 0) {
-        alert("Masukkan nominal harga yang valid!");
-        return;
-    }
-    
-    const item = DATA_MENU.find(i => i.id === currentCustomItemId);
-    if (item) addToCart(item, 1, priceVal);
+    const price = parseInt(document.getElementById('customPriceInput').value);
+    if (!price || price <= 0) return alert("Masukkan harga yang valid!");
+    const item = DATA_MENU.find(i => i.id === currentItemIdForPrice);
+    addToCart(item, 1, price);
     closeModal('customPriceModal');
 }
 
 function parseAI() {
-  let text = document.getElementById('aiInput').value.toLowerCase();
-  
-  text = text.replace(/rb/g, '000');
-  text = text.replace(/\ba\b/g, 'sate ayam'); 
-  text = text.replace(/\bk\b/g, 'sate kambing');
-  text = text.replace(/\bkt\b/g, 'kambing tanpa lemak');
-  text = text.replace(/\bg\b/g, 'gule');
-  text = text.replace(/\bn\b/g, 'nasi'); 
-
-  const feedbackEl = document.getElementById('aiFeedback');
-
-  if (!text.trim()) {
-      feedbackEl.style.display = 'none';
-      return;
-  }
-
-  const orders = text.split(/[\n,]+/);
-  let itemsAdded = 0; 
-
-  orders.forEach(raw => {
-    const line = raw.trim();
-    if (!line) return;
-
-    let numbers = line.match(/\d+(\.\d+)?/g); 
-    let numericValues = numbers ? numbers.map(n => parseInt(n.replace(/\./g, ''))) : [1];
-    
-    let qty = 1;
-    let customPrice = null;
-
-    numericValues.forEach(val => {
-      if (val > 500) customPrice = val;
-      else qty = val;
-    });
-
-    let bestMatch = null;
-    let maxScore = 0;
-
-    DATA_MENU.forEach(item => {
-      item.keywords.forEach(key => {
-        if (line.includes(key)) {
-          if (key.length > maxScore) {
-            maxScore = key.length;
-            bestMatch = item;
-          }
-        }
-      });
-    });
-
-    if (bestMatch) {
-      if (customPrice && bestMatch.isFlexible) {
-        addToCart(bestMatch, 1, customPrice); 
-        itemsAdded++;
-      } 
-      else if (customPrice && !bestMatch.isFlexible) {
-         let calculatedQty = Math.floor(customPrice / bestMatch.price);
-         if(calculatedQty > 0) {
-             addToCart(bestMatch, calculatedQty);
-             itemsAdded++;
-         }
-      }
-      else {
-        if (!bestMatch.needsPriceInput || customPrice) {
-            addToCart(bestMatch, qty);
-            itemsAdded++;
-        }
-      }
-    }
+  let txt = document.getElementById('aiInput').value.toLowerCase().replace(/rb/g, '000');
+  const codes = { 'a': 'sate ayam', 'k': 'sate kambing', 'kt': 'kambing tanpa lemak', 'g': 'gule', 'n': 'nasi' };
+  Object.keys(codes).forEach(k => txt = txt.replace(new RegExp(`\\b${k}\\b`, 'g'), codes[k]));
+  const orders = txt.split(/[\n,]+/);
+  orders.forEach(line => {
+    let nums = (line.match(/\d+/g) || []).map(Number);
+    let q = 1, p = null; nums.forEach(n => n > 500 ? p = n : q = n);
+    let match = DATA_MENU.find(m => m.keywords.some(k => line.includes(k)));
+    if (match) addToCart(match, q, p);
   });
-
-  if (itemsAdded > 0) {
-      document.getElementById('aiInput').value = '';
-      feedbackEl.textContent = '✅ Berhasil masuk keranjang!';
-      feedbackEl.style.backgroundColor = '#ecfdf5';
-      feedbackEl.style.color = '#059669';
-      feedbackEl.style.display = 'block';
-      setTimeout(() => { feedbackEl.style.display = 'none'; }, 3000); 
-  } else {
-      feedbackEl.textContent = '❌ Gagal! Cek ketikan atau nama menu.';
-      feedbackEl.style.backgroundColor = '#fef2f2';
-      feedbackEl.style.color = '#dc2626';
-      feedbackEl.style.display = 'block';
-  }
+  document.getElementById('aiInput').value = '';
 }
 
 function showCheckout() {
-  if (cart.length === 0) return alert('Keranjang kosong');
-  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-  
-  document.getElementById('modalTotal').textContent = formatRp(total);
-  document.getElementById('paidInput').value = '';
-  document.getElementById('changeDisplay').textContent = 'Rp 0';
-  document.getElementById('paymentModal').style.display = 'flex';
-  
-  document.getElementById('paidInput').oninput = (e) => {
-    const paid = parseInt(e.target.value) || 0;
-    const change = paid - total;
-    document.getElementById('changeDisplay').textContent = formatRp(change);
-    document.getElementById('changeDisplay').style.color = change < 0 ? '#ef4444' : '#10b981';
-  };
-  
-  setTimeout(() => document.getElementById('paidInput').focus(), 100);
-}
-
-function addNol(val) {
-  const input = document.getElementById('paidInput');
-  input.value = input.value + val;
-  input.dispatchEvent(new Event('input'));
-  input.focus();
-}
-
-function closeModal(modalId) {
-  document.getElementById(modalId).style.display = 'none';
+    if (cart.length === 0) return;
+    document.getElementById('modalTotal').textContent = formatRp(cart.reduce((a, b) => a + (b.price * b.qty), 0));
+    document.getElementById('paidInput').value = '';
+    document.getElementById('changeDisplay').textContent = 'Rp 0';
+    document.getElementById('paymentModal').style.display = 'flex';
 }
 
 function processTransaction() {
-  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-  const paid = parseInt(document.getElementById('paidInput').value) || 0;
-  const tableNum = document.getElementById('tableNum').value || '-';
-  const note = document.getElementById('orderNote').value || '-';
-  
-  if (paid < total && paid !== 0) {
-    if(!confirm('Uang kurang! Tetap lanjutkan sebagai utang/kurang bayar?')) return;
-  }
-
-  const trx = {
-    id: Date.now(),
-    date: new Date().toLocaleString('id-ID'),
-    tableNum: tableNum,
-    note: note, 
-    items: [...cart],
-    total: total,
-    paid: paid
-  };
-
-  transactions.unshift(trx);
-  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
-  
-  resetCart();
-  closeModal('paymentModal');
-  updateStats();
-  renderHistory();
-  alert('Transaksi Berhasil!');
-}
-
-function showReport() {
-  const salesStats = {}; 
-  
-  transactions.forEach(t => {
-    t.items.forEach(item => {
-      const key = `${item.id}_${item.price}`;
-      
-      if (!salesStats[key]) {
-        const menuRef = DATA_MENU.find(m => m.id === item.id);
-        const category = menuRef ? menuRef.category : 'food';
-        const isCustom = menuRef ? (menuRef.price !== item.price) : false;
-
-        salesStats[key] = {
-          id: item.id,
-          label: item.label,
-          price: item.price,
-          qty: 0,
-          category: category,
-          isCustom: isCustom
-        };
-      }
-      salesStats[key].qty += item.qty;
+    const total = cart.reduce((a,b)=>a+b.price*b.qty,0);
+    transactions.unshift({ 
+        id: Date.now(), 
+        date: new Date().toLocaleString('id-ID'), 
+        total: total, 
+        items: [...cart] 
     });
-  });
-
-  const soldItems = Object.values(salesStats).sort((a, b) => b.qty - a.qty);
-  const foods = soldItems.filter(i => i.category === 'food');
-  const drinks = soldItems.filter(i => i.category === 'drink');
-  
-  let foodHtml = '';
-  let drinkHtml = '';
-  let totalFood = 0;
-  let totalDrink = 0;
-
-  const renderRow = (item) => {
-    let priceDisplay = `<span style="color:#64748b;font-size:12px">@ ${formatRp(item.price)}</span>`;
-    if (item.isCustom) {
-      priceDisplay = `<span style="color:#ef4444;font-size:12px;background:#fee2e2;padding:2px 8px;border-radius:6px;font-weight:600">Khusus: ${formatRp(item.price)}</span>`;
-    }
-
-    let qtyDisplay = item.qty;
-    if (['sk_porsi', 'sk_nl_porsi', 'sa_porsi'].includes(item.id)) {
-        qtyDisplay = `${item.qty} Porsi <span style="font-weight:800;color:var(--accent);font-size:12px;display:block">(${item.qty * 10} Tusuk)</span>`;
-    } 
-    else if (['sk_tusuk', 'sk_nl_tusuk', 'sa_tusuk'].includes(item.id)) {
-        qtyDisplay = `${item.qty} Tusuk`;
-    }
-
-    return `
-      <tr class="report-row">
-        <td>
-          <div style="font-weight:600;color:#0f172a; margin-bottom:2px;">${item.label}</div>
-          <div>${priceDisplay}</div>
-        </td>
-        <td style="text-align:right;vertical-align:middle" class="report-qty">${qtyDisplay}</td>
-      </tr>`;
-  };
-
-  if (foods.length > 0) {
-    foodHtml += '<tr><td colspan="2" class="report-group-header">Makanan & Nasi</td></tr>';
-    foods.forEach(i => {
-      foodHtml += renderRow(i);
-      totalFood += i.qty;
-    });
-  }
-
-  if (drinks.length > 0) {
-    drinkHtml += '<tr><td colspan="2" class="report-group-header" style="border-top:1px solid #e2e8f0;">Minuman</td></tr>';
-    drinks.forEach(i => {
-      drinkHtml += renderRow(i);
-      totalDrink += i.qty;
-    });
-  }
-
-  const container = document.getElementById('reportContent');
-  
-  if (totalFood === 0 && totalDrink === 0) {
-    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:60px 20px;">Belum ada data penjualan.<br>Lakukan transaksi terlebih dahulu.</div>';
-  } else {
-    let html = '<table style="width:100%">';
-    html += '<tr style="background:#f8fafc"><th style="padding:14px 16px; border-bottom:2px solid #e2e8f0;">Menu Item</th><th style="text-align:right;padding:14px 16px; border-bottom:2px solid #e2e8f0;">Qty / Tusuk</th></tr>';
-    html += foodHtml;
-    html += drinkHtml;
-    html += '</table>';
-    
-    html += `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px; padding: 0 20px 20px;">
-        <div style="background:#ecfeff;padding:20px;border-radius:12px;text-align:center;border:1px solid #cffafe">
-           <div style="font-size:13px;color:#0e7490;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Transaksi Makanan</div>
-           <div style="font-weight:800;font-size:28px;color:#0891b2">${totalFood}</div>
-        </div>
-        <div style="background:#fff7ed;padding:20px;border-radius:12px;text-align:center;border:1px solid #ffedd5">
-           <div style="font-size:13px;color:#c2410c;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Transaksi Minuman</div>
-           <div style="font-weight:800;font-size:28px;color:#ea580c">${totalDrink}</div>
-        </div>
-      </div>
-    `;
-
-    container.innerHTML = html;
-  }
-
-  const reportPage = document.getElementById('reportPage');
-  reportPage.style.display = 'flex';
-  document.body.style.overflow = 'hidden'; 
-}
-
-function closeReport() {
-  const reportPage = document.getElementById('reportPage');
-  reportPage.style.display = 'none';
-  document.body.style.overflow = '';
+    localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+    resetCart(); closeModal('paymentModal'); updateStats(); renderHistory();
+    alert("Transaksi berhasil disimpan!");
 }
 
 function updateStats() {
-  const today = new Date().toLocaleDateString('id-ID');
-  const todaysTrx = transactions.filter(t => t.date.includes(today)); 
-  const omset = todaysTrx.reduce((a, b) => a + b.total, 0);
-  document.getElementById('omsetVal').textContent = formatRp(omset);
-  document.getElementById('trxVal').textContent = todaysTrx.length;
+    const today = new Date().toLocaleDateString('id-ID');
+    const trx = transactions.filter(t => t.date.includes(today));
+    document.getElementById('omsetVal').textContent = formatRp(trx.reduce((a, b) => a + b.total, 0));
+    document.getElementById('trxVal').textContent = trx.length;
 }
 
 function renderHistory() {
-  const table = document.getElementById('historyTable');
-  table.innerHTML = `
-    <tr>
-      <th style="width:120px;">Waktu</th>
-      <th style="width:60px;">Meja</th>
-      <th>Detail Pesanan</th>
-      <th style="text-align:right; width:120px;">Total</th>
-      <th style="text-align:center;width:100px;">Aksi</th>
-    </tr>`;
-  
-  transactions.slice(0, 20).forEach(t => {
-    const itemsStr = t.items.map(i => `${i.label} <span style="color:#64748b; font-weight:600">x${i.qty}</span>`).join(', ');
-    const mejaInfo = t.tableNum ? `<span style="background:#f1f5f9;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px; color:#475569; border:1px solid #e2e8f0;">${t.tableNum}</span>` : '-';
-    const noteInfo = t.note && t.note !== '-' ? `<div style="font-size:11px;color:#d97706;margin-top:2px;">Catatan: ${t.note}</div>` : '';
-
-    const row = `
-      <tr>
-        <td style="color:#64748b;font-size:12px; font-family:monospace;">${t.date.split(',')[1] || t.date}</td>
-        <td style="text-align:center">${mejaInfo}</td>
-        <td style="line-height:1.5">${itemsStr}${noteInfo}</td>
-        <td style="text-align:right;font-weight:700; color:#0f172a;">${formatRp(t.total)}</td>
-        <td style="text-align:center; white-space:nowrap">
-          <button onclick="editTransaction(${t.id})" class="action-btn edit" title="Edit Transaksi">
-             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button onclick="deleteTransaction(${t.id})" class="action-btn del" title="Hapus Transaksi">
-             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-          </button>
-        </td>
-      </tr>
-    `;
-    table.innerHTML += row;
-  });
-
-  if (transactions.length === 0) {
-    table.innerHTML += '<tr><td colspan="5" style="text-align:center;padding:40px;color:#cbd5e1; font-style:italic;">Belum ada riwayat transaksi hari ini</td></tr>';
-  }
-}
-
-function editTransaction(id) {
-  if (cart.length > 0) {
-    if (!confirm('Keranjang saat ini tidak kosong. Mengedit transaksi lama akan menimpa keranjang saat ini. Lanjutkan?')) return;
-  }
-  
-  const trxIndex = transactions.findIndex(t => t.id === id);
-  if (trxIndex === -1) return;
-  const trx = transactions[trxIndex];
-  
-  if(!confirm('Edit transaksi ini? Item akan kembali ke keranjang dan transaksi akan dihapus dari riwayat.')) return;
-  
-  cart = [...trx.items];
-  
-  if (trx.tableNum && trx.tableNum !== '-') {
-      document.getElementById('tableNum').value = trx.tableNum;
-  } else {
-      document.getElementById('tableNum').value = '';
-  }
-  
-  if (trx.note && trx.note !== '-') {
-      document.getElementById('orderNote').value = trx.note;
-  } else {
-      document.getElementById('orderNote').value = '';
-  }
-
-  transactions.splice(trxIndex, 1);
-  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
-  
-  renderCart();
-  updateStats();
-  renderHistory();
-  window.scrollTo({top: 0, behavior: 'smooth'});
-}
-
-function deleteTransaction(id) {
-  if(!confirm('Yakin ingin menghapus transaksi ini?')) return;
-  transactions = transactions.filter(t => t.id !== id);
-  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
-  updateStats();
-  renderHistory();
+    const t = document.getElementById('historyTable');
+    t.innerHTML = '<tr><th>Waktu</th><th>Pesanan</th><th>Total</th></tr>';
+    transactions.slice(0, 10).forEach(trx => {
+        t.innerHTML += `<tr><td>${trx.date.split(',')[1]}</td><td>${trx.items.map(i=>i.label).join(', ')}</td><td>${formatRp(trx.total)}</td></tr>`;
+    });
 }
 
 function resetHistory() {
-  if (transactions.length === 0) return alert('Riwayat sudah kosong.');
-  if(!confirm('PERINGATAN: Anda akan menghapus SEMUA riwayat transaksi.\nData omset hari ini juga akan terhapus.\n\nLanjutkan?')) return;
-  transactions = [];
-  localStorage.setItem('trx_cak_sabar', JSON.stringify([]));
-  updateStats();
-  renderHistory();
-  alert('Riwayat berhasil dikosongkan.');
+    if(!confirm("Hapus semua riwayat transaksi?")) return;
+    transactions = [];
+    localStorage.removeItem('trx_cak_sabar');
+    updateStats(); renderHistory();
 }
 
 function exportExcel() {
-  const data = transactions.map(t => ({
-    Tanggal: t.date,
-    Meja: t.tableNum || '-',
-    Catatan: t.note || '-',
-    Total: t.total,
-    Bayar: t.paid,
-    Item: t.items.map(i => `${i.label} (${i.qty})`).join('; ')
-  }));
-  
-  const ws = XLSX.utils.json_to_sheet(data);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
-  XLSX.writeFile(wb, "Laporan_Warung_Caksabar.xlsx");
+    if(transactions.length === 0) return alert("Tidak ada data untuk diexport!");
+    const wsData = transactions.map(t => ({
+        Waktu: t.date,
+        Pesanan: t.items.map(i => `${i.label} x${i.qty}`).join(', '),
+        Total: t.total
+    }));
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+    XLSX.writeFile(wb, `Laporan_CakSabar_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function updatePOBadge() {
+    const active = preOrders.filter(p => p.date === new Date().toLocaleDateString('id-ID'));
+    document.getElementById('poBadgeCount').textContent = active.length;
+    document.getElementById('poBadgeCount').style.display = active.length > 0 ? 'block' : 'none';
+}
+
+function showPreOrderList() {
+    const container = document.getElementById('poListContainer'); container.innerHTML = '';
+    const active = preOrders.filter(p => p.date === new Date().toLocaleDateString('id-ID'));
+    if(active.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Tidak ada pre-order aktif</div>';
+    active.forEach(po => {
+        container.innerHTML += `<div style="padding:15px; background:#f8fafc; border-radius:12px; margin-bottom:10px; border:1px solid #e2e8f0">
+            <div style="display:flex; justify-content:space-between"><b>${po.name}</b> <span>${po.time}</span></div>
+            <div style="font-size:12px; color:#64748b; margin-top:4px">${po.items.map(i=>`${i.qty} ${i.label}`).join(', ')}</div>
+            <div style="margin-top:10px; display:flex; gap:8px">
+                <button onclick="showPOAction(${po.id})" style="flex:1; background:var(--accent); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer">Detail</button>
+                <button onclick="deletePreOrder(${po.id})" style="color:red; background:none; border:none; cursor:pointer">Batal</button>
+            </div>
+        </div>`;
+    });
+    document.getElementById('preOrderListModal').style.display = 'flex';
+}
+
+function deletePreOrder(id) {
+    if(!confirm("Hapus Pre-Order ini?")) return;
+    preOrders = preOrders.filter(p => p.id !== id);
+    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
+    showPreOrderList(); updatePOBadge();
+}
+
+function showReport() {
+    const page = document.getElementById('reportPage');
+    const content = document.getElementById('reportContent');
+    content.innerHTML = '';
+    
+    // Group items by name
+    const itemSummary = {};
+    transactions.forEach(t => {
+        t.items.forEach(item => {
+            if(!itemSummary[item.label]) itemSummary[item.label] = { qty: 0, total: 0 };
+            itemSummary[item.label].qty += item.qty;
+            itemSummary[item.label].total += (item.qty * item.price);
+        });
+    });
+
+    let html = '<table><tr><th>Item</th><th>Terjual</th><th>Total</th></tr>';
+    for(const name in itemSummary) {
+        html += `<tr class="report-row">
+            <td>${name}</td>
+            <td class="report-qty">${itemSummary[name].qty}</td>
+            <td>${formatRp(itemSummary[name].total)}</td>
+        </tr>`;
+    }
+    html += '</table>';
+    
+    if(Object.keys(itemSummary).length === 0) {
+        html = '<div style="padding:40px;text-align:center;color:var(--muted)">Belum ada data penjualan</div>';
+    }
+    
+    content.innerHTML = html;
+    page.style.display = 'flex';
+}
+
+function closeReport() {
+    document.getElementById('reportPage').style.display = 'none';
 }
 
 function init() {
-  PrinterService.init();
-  renderMenuGrid();
-  updateStats();
-  renderHistory();
-  updatePOBadge();
-  startAlarmChecker();
-  
-  setTimeout(() => {
-    const splash = document.getElementById('splash-screen');
-    if (splash) splash.classList.add('hide-splash');
-  }, 3000); 
+    PrinterService.init();
+    renderMenuGrid(); updateStats(); renderHistory(); updatePOBadge();
+    
+    // Re-check change on paid input
+    document.getElementById('paidInput').addEventListener('input', renderCart);
+    
+    setInterval(checkAlarms, 15000); // Check alarms every 15s
+    setTimeout(() => document.getElementById('splash-screen').classList.add('hide-splash'), 2000);
 }
-
 init();
 </script>
 </body>

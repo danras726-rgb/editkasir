@@ -907,10 +907,12 @@ function initPOAlarmChecker() {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
                         
-                        // KODE BARU: MEMAKSA APLIKASI LOMPAT KE DEPAN LAYAR
-                        if (window.cordova && cordova.plugins && cordova.plugins.bringtofront) {
-                            cordova.plugins.bringtofront();
-                        }
+                        // KODE BARU: Gunakan setTimeout agar JS sempat "bangun" di latar belakang
+                        setTimeout(() => {
+                            if (window.cordova && cordova.plugins && cordova.plugins.bringtofront) {
+                                cordova.plugins.bringtofront();
+                            }
+                        }, 500);
                         
                         // Tampilkan Layar Penuh Dering
                         triggerPOAlarmScreen(trx, notification.title);
@@ -1130,11 +1132,17 @@ function processTransaction() {
           text: `Pesanan a/n ${poName} untuk jam ${poTime} segera diambil.`,
           trigger: { at: prepDate },
           foreground: true, vibrate: true, wakeup: true, priority: 2,
-          launch: true, // AUTO BUKA APLIKASI FULL SCREEN (ANDROID 10+)
+          launch: true, // AUTO BUKA APLIKASI
+          fullScreenIntent: true, // FLAG NATIVE ANDROID SEPERTI PANGGILAN MASUK
+          fullscreen: true,
+          visibility: 1, // VISIBILITY_PUBLIC (Muncul penuh di Lockscreen)
           channel: 'po_alarm_urgent', lockscreen: true,
           sticky: true, autoClear: false,
           sound: 'file://audionotif.mp3',
-          actions: [{ id: 'view_po', title: 'Lihat Pesanan' }],
+          actions: [
+              // Tambahan launch: true agar sekali klik tombol langsung pindah ke Kasir
+              { id: 'view_po', title: 'BUKA & PROSES', launch: true }
+          ],
           data: { trxId: trx.id }
       });
       
@@ -1145,11 +1153,16 @@ function processTransaction() {
           text: `Pre-Order a/n ${poName} harusnya diambil sekarang (${poTime}).`,
           trigger: { at: pickupDate },
           foreground: true, vibrate: true, wakeup: true, priority: 2,
-          launch: true, // AUTO BUKA APLIKASI FULL SCREEN (ANDROID 10+)
+          launch: true, 
+          fullScreenIntent: true, // FLAG NATIVE ANDROID SEPERTI PANGGILAN MASUK
+          fullscreen: true,
+          visibility: 1, 
           channel: 'po_alarm_urgent', lockscreen: true,
           sticky: true, autoClear: false,
           sound: 'file://audionotif.mp3',
-          actions: [{ id: 'view_po', title: 'Lihat Pesanan' }],
+          actions: [
+              { id: 'view_po', title: 'BUKA & PROSES', launch: true }
+          ],
           data: { trxId: trx.id }
       });
   }

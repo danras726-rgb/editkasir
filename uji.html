@@ -1171,7 +1171,22 @@ function initPOAlarmChecker() {
     // Listener notifikasi Cordova (jika aplikasi di background)
     document.addEventListener('deviceready', () => {
         if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+            // Minta izin notifikasi (wajib untuk Android 13+)
+            cordova.plugins.notification.local.requestPermission(function (granted) {
+                console.log("Izin Notifikasi:", granted);
+            });
+
+            // Handler saat badan notifikasi diklik
             cordova.plugins.notification.local.on('click', function (notification) {
+                const trxId = notification.data ? notification.data.trxId : null;
+                if (trxId) {
+                    currentActivePO = trxId;
+                    showPODetailModal(trxId);
+                }
+            });
+            
+            // Handler khusus saat tombol action "Lihat Pesanan" diklik
+            cordova.plugins.notification.local.on('view_po', function (notification) {
                 const trxId = notification.data ? notification.data.trxId : null;
                 if (trxId) {
                     currentActivePO = trxId;
@@ -1223,6 +1238,12 @@ function triggerPOAlarm(trx) {
             text: text,
             foreground: true,
             vibrate: true,
+            wakeup: true, // Menyalakan layar otomatis
+            priority: 2, // Prioritas tinggi (2) agar muncul sebagai Floating/Heads-up notification
+            lockscreen: true, // Tampilkan di lockscreen
+            actions: [
+                { id: 'view_po', title: 'Lihat Pesanan' }
+            ],
             data: { trxId: trx.id }
         });
     } else if (typeof Notification !== 'undefined') {

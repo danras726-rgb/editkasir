@@ -885,10 +885,14 @@ function initPOAlarmChecker() {
                 if (trxId) {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
-                        // Buka langsung layar penuh
+                        // KODE BARU: MEMAKSA APLIKASI LOMPAT KE DEPAN LAYAR
+                        if (window.cordova && cordova.plugins && cordova.plugins.bringtofront) {
+                            cordova.plugins.bringtofront();
+                        }
+                        
+                        // Tampilkan Layar Penuh Dering
                         triggerPOAlarmScreen(trx, notification.title);
                     }
-                    // Hapus Notifikasi Menempel dari Status Bar
                     cordova.plugins.notification.local.clear(notification.id);
                 }
             };
@@ -902,6 +906,13 @@ function initPOAlarmChecker() {
                 if (trxId) {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
+                        
+                        // KODE BARU: MEMAKSA APLIKASI LOMPAT KE DEPAN LAYAR
+                        if (window.cordova && cordova.plugins && cordova.plugins.bringtofront) {
+                            cordova.plugins.bringtofront();
+                        }
+                        
+                        // Tampilkan Layar Penuh Dering
                         triggerPOAlarmScreen(trx, notification.title);
                     }
                 }

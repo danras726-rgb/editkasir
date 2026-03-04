@@ -13,18 +13,21 @@
     *{
         box-sizing:border-box;
         font-family:Inter,system-ui,-apple-system,sans-serif;
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent; /* Menghilangkan kedipan warna biru saat diklik */
+        touch-action: manipulation; /* Menghilangkan delay 300ms, membuat klik instan dan anti-lag */
     }
     body{
         margin:0;background:var(--bg);color:#0f172a;padding:12px;padding-bottom:80px; 
         -webkit-font-smoothing: antialiased;
+        /* Mencegah teks diselect/disalin di perangkat mobile */
         -webkit-user-select: none; 
         -moz-user-select: none; 
         -ms-user-select: none; 
         user-select: none; 
         -webkit-touch-callout: none;
     }
+    
+    /* Pengecualian: Bolehkan select/copy khusus pada area input agar tetap bisa mengetik dengan normal */
     input, textarea {
         -webkit-user-select: auto;
         -moz-user-select: auto;
@@ -32,31 +35,56 @@
         user-select: auto;
     }
     
+    /* === LAYOUT RESPONSIVE SYSTEM === */
     .app { max-width: 100%; margin: 0 auto; }
-    .layout-grid { display: flex; flex-direction: column; gap: 24px; }
+
+    .layout-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
 
     @media (min-width: 900px) {
       .app { max-width: 1280px; padding: 20px; }
-      .layout-grid { display: grid; grid-template-columns: 1fr 400px; gap: 32px; align-items: start; }
-      .sidebar-column { position: sticky; top: 20px; height: fit-content; }
-      .menu-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      
+      .layout-grid {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 32px;
+        align-items: start;
+      }
+
+      .sidebar-column {
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+      }
+      
+      .menu-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+
       body { padding-bottom: 40px; }
     }
+    
     @media (min-width: 600px) and (max-width: 899px) {
       .app { max-width: 768px; }
       .menu-grid { grid-template-columns: repeat(2, 1fr) !important; }
     }
 
+    /* === HEADER === */
     header { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; background: var(--card); padding: 16px 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     h1 { font-size: 20px; margin: 0; color: var(--accent); font-weight: 800; letter-spacing: -0.5px; }
     @media(min-width: 600px) { h1 { font-size: 24px; } }
     .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
     
+    /* Header Button Group */
     .header-actions { display: flex; gap: 8px; align-items: center; }
+
     .header-btn { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: 0.2s; color: #334155; display: flex; align-items: center; justify-content: center; }
     .header-btn:hover { background: #e2e8f0; color: var(--accent); transform: translateY(-1px); }
     
-    .po-badge { position:absolute; top:-5px; right:-5px; background:var(--red); color:white; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:10px; display:none; }
+    /* Tombol Bluetooth Spesifik */
     #btnConnect { position: relative; }
     #btnConnect.connected { background: #ecfdf5; border-color: #6ee7b7; color: #059669; }
     #btnConnect.disconnected { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
@@ -64,45 +92,64 @@
     .connected .bt-status-dot { background: #10b981; }
     .disconnected .bt-status-dot { background: #ef4444; }
 
+
+    /* === COMPONENTS === */
     .card-box { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
+
+    /* Stats */
     .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 0; }
     .stat-card { background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
     .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
     .stat-val { font-size: 20px; font-weight: 800; margin-top: 6px; color: #0f172a; }
 
+    /* AI Input */
     .ai-section { background: linear-gradient(to bottom right, #ffffff, #f0f9ff); border-color: #bae6fd; }
     .ai-box { width: 100%; border: 2px solid #e2e8f0; border-radius: 12px; padding: 12px; font-size: 15px; margin-top: 12px; transition: 0.2s; resize: none; font-family: inherit; line-height: 1.5; }
     .ai-box:focus { border-color: var(--accent); outline: none; background: white; box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1); }
     .ai-hint { font-size: 12px; color: var(--muted); margin-top: 12px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; line-height: 1.6; border: 1px solid #e2e8f0; }
     .code-tag { font-family: 'Courier New', monospace; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #0f172a; font-size: 11px; border: 1px solid #cbd5e1; }
 
+    /* Menu Grid & Item Card Baru (Vertikal dengan Animasi Slide Down) */
     .section-title { font-weight: 800; margin: 0 0 16px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; color: #1e293b; border-left: 4px solid var(--accent); padding-left: 12px; }
-    .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; } 
+    .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; } /* 2 kolom di HP */
     @media (min-width: 600px) { .menu-grid { grid-template-columns: repeat(3, 1fr) !important; } }
     
     .menu-item { 
         background: var(--card); border: 1px solid #e2e8f0; border-radius: 16px; 
         padding: 0; position: relative; 
-        transition: transform 0.1s ease, box-shadow 0.1s ease;
+        transition: transform 0.1s ease, box-shadow 0.1s ease; /* Animasi difokuskan agar tidak membebani HP (anti patah-patah) */
         box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; user-select: none;
         display: flex; flex-direction: column; overflow: hidden; align-items: stretch;
     }
     .menu-item:active { transform: scale(0.97); box-shadow: 0 0 0 rgba(0,0,0,0); }
     
-    .menu-img { width: 100%; height: 110px; object-fit: cover; background: #f1f5f9; flex-shrink: 0; border-bottom: 1px solid #e2e8f0; }
+    .menu-img {
+        width: 100%; height: 110px; object-fit: cover;
+        background: #f1f5f9; flex-shrink: 0; border-bottom: 1px solid #e2e8f0;
+    }
+    
     .menu-info { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 12px; text-align: center; }
     .m-name { font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px; line-height: 1.3; }
     .m-price-sm { font-size: 13px; color: var(--accent); font-weight: 700; }
     
+    /* Slide Down Controls Wrapper */
     .menu-controls-wrapper {
-        max-height: 0; opacity: 0; overflow: hidden;
-        transition: max-height 0.15s ease-out, opacity 0.15s ease-out, padding 0.15s ease-out; 
-        background: #f8fafc; border-top: 1px solid transparent;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height 0.15s ease-out, opacity 0.15s ease-out, padding 0.15s ease-out; /* Animasi dipercepat dari 0.3s menjadi 0.15s */
+        background: #f8fafc;
+        border-top: 1px solid transparent;
     }
+    /* State aktif saat barang masuk keranjang */
     .menu-item.has-qty .menu-controls-wrapper {
-        max-height: 70px; opacity: 1; padding: 10px 12px; border-top-color: #e2e8f0;
+        max-height: 70px;
+        opacity: 1;
+        padding: 10px 12px;
+        border-top-color: #e2e8f0;
     }
 
+    /* Kontrol Plus Minus proporsional memenuhi ruang */
     .qty-controls { display: flex; align-items: center; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #cbd5e1; height: 38px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: 100%; }
     .qty-btn { flex: 1; height: 100%; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: none; font-weight: bold; cursor: pointer; font-size: 18px; transition: 0.2s; padding: 0; }
     .qty-btn:active { background: #e2e8f0; }
@@ -110,6 +157,7 @@
     .qty-btn.plus { color: var(--green); border-left: 1px solid #cbd5e1; }
     .qty-val { flex: 1.2; padding: 0; font-size: 15px; font-weight: 800; text-align: center; color: #0f172a; }
 
+    /* Cart */
     .cart-wrapper { background: var(--card); border-radius: 20px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
     .cart-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #cbd5e1; font-size: 14px; align-items: center; }
     .cart-row:last-child { border-bottom: none; }
@@ -122,14 +170,17 @@
     .btn.secondary { background: #f1f5f9; color: #475569; box-shadow: none; border: 1px solid #cbd5e1; }
     .btn.secondary:hover { background: #e2e8f0; }
 
+    /* Table Input in Cart */
     .table-input-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; background: #f8fafc; padding: 12px 16px; border-radius: 12px; border: 1px solid #e2e8f0; }
     .table-input-field { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; text-align: center; font-size: 16px; color: var(--accent); }
     .table-input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1); }
     
+    /* Notes Input */
     .notes-input-row { margin-top: 12px; }
     .notes-input { width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 14px; color: #334155; background: #f8fafc; resize: none; font-family: inherit; }
     .notes-input:focus { outline: none; border-color: var(--accent); background: white; }
 
+    /* Transaction History Table */
     .history-section { margin-top: 0; }
     .table-container { background: #fff; border-radius: 16px; padding: 0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -142,29 +193,50 @@
     .action-btn.edit { color: var(--orange); background: #fff7ed; border: 1px solid #ffedd5; margin-right: 6px; }
     .action-btn.del { color: var(--red); background: #fef2f2; border: 1px solid #fee2e2; }
 
+    /* Modal Styles */
     .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(4px); padding: 20px; }
     .modal-card { background: white; width: 100%; max-width: 380px; padding: 24px; border-radius: 24px; animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
     @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     input.money { width: 100%; padding: 16px; font-size: 24px; text-align: center; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 16px; font-weight: 700; color: #0f172a; letter-spacing: 1px; }
     input.money:focus { border-color: var(--accent); outline: none; }
 
+    /* Bluetooth Device List Modal */
     #btDeviceList { max-height: 200px; overflow-y: auto; margin-top: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
     .bt-device-item { padding: 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
     .bt-device-item:hover { background: #f8fafc; }
     .bt-device-item:last-child { border-bottom: none; }
     
+    /* === PRE-ORDER & ALARM STYLES === */
+    .po-toggle-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 12px; margin-top: 16px; }
+    .po-fields { display: none; margin-top: 12px; gap: 8px; flex-direction: column; }
+    
+    /* Alarm Screen (Call-like) */
+    #poAlarmScreen { position: fixed; inset: 0; background: linear-gradient(135deg, #1e293b, #0f172a); z-index: 99999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+    .alarm-ringing { animation: pulseBg 1.5s infinite; }
+    .alarm-icon { font-size: 80px; margin-bottom: 20px; animation: shake 0.5s infinite; }
+    .btn-call { background: var(--green); color: white; border: none; padding: 16px 32px; font-size: 20px; border-radius: 50px; font-weight: bold; margin-top: 40px; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.5); transition: 0.2s; }
+    .btn-call:active { transform: scale(0.95); }
+    .btn-dismiss { background: transparent; border: 2px solid #ef4444; color: #ef4444; margin-top: 16px; padding: 12px 24px; border-radius: 50px; cursor: pointer; font-weight: bold; }
+    @keyframes pulseBg { 0% { background: #1e293b; } 50% { background: #334155; } 100% { background: #1e293b; } }
+    @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(15deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-15deg); } 100% { transform: rotate(0deg); } }
+    
+    .po-badge { background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 8px; text-transform: uppercase; }
+
+    /* Full Page Report */
     #reportPage { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; overflow-y: auto; padding: 0; }
     .report-header { background: white; padding: 16px 20px; position: sticky; top: 0; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); z-index: 10; max-width: 100%; }
     .report-container { padding: 20px; max-width: 800px; margin: 0 auto; width: 100%; }
     .report-back-btn { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #334155; transition: 0.2s; }
     .report-back-btn:hover { background: #e2e8f0; color: var(--accent); }
 
+    /* Report Table Specific */
     .report-row td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f1f5f9; }
     .report-qty { font-weight: 700; color: var(--accent); font-size: 16px; }
     .report-group-header { background: #f8fafc; font-weight: 800; color: #334155; padding: 12px 16px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 2px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
     .slide-up { animation: slideUp 0.3s ease-out forwards; }
     @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+    /* === SPLASH SCREEN === */
     #splash-screen { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease-out, visibility 0.6s; }
     .splash-logo-container { width: 100px; height: 100px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-radius: 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(8, 145, 178, 0.3); margin-bottom: 24px; animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
     .splash-logo-img { width: 60px; height: 60px; object-fit: contain; filter: brightness(0) invert(1); }
@@ -173,10 +245,6 @@
     .hide-splash { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
     @keyframes bounceIn { 0% { transform: scale(0); opacity: 0; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
     @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-
-    /* New Alarm Style */
-    .alarm-accent { border: 2px solid var(--accent); background: #f0f9ff; }
-    .alarm-detail-list { font-size: 14px; color: #334155; margin: 12px 0; padding: 12px; background: #fff; border-radius: 8px; border: 1px dashed #cbd5e1; }
   </style>
 </head>
 <body>
@@ -201,12 +269,8 @@
       </div>
     </div>
     
+    <!-- HEADER ACTIONS: Koneksi Bluetooth & Laporan -->
     <div class="header-actions">
-      <button class="header-btn" style="position:relative;" onclick="showPreOrderList()" title="Daftar Pre Order">
-        📦
-        <span id="poBadgeCount" class="po-badge">0</span>
-      </button>
-
       <button id="btnConnect" class="header-btn disconnected" onclick="PrinterService.connect()" title="Koneksi Printer Bluetooth">
         <span class="bt-status-dot"></span>
         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.71,7.71L12,2h-1v7.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L11,14.41V22h1l5.71-5.71L13.41,12L17.71,7.71z M13,5.83l1.88,1.88L13,9.59V5.83z M13,18.17v-3.76l1.88,1.88L13,18.17z"/></svg>
@@ -218,6 +282,7 @@
   </header>
 
   <div class="layout-grid">
+    <!-- LEFT COLUMN: MENU & AI -->
     <div class="main-column">
       
       <div class="card-box ai-section">
@@ -246,6 +311,7 @@
 
     </div>
 
+    <!-- RIGHT COLUMN: STATS, CART, HISTORY (Sticky on Desktop) -->
     <div class="sidebar-column">
       
       <div class="card-box stats-grid">
@@ -274,8 +340,24 @@
           <input type="number" id="tableNum" class="table-input-field" placeholder="-" value="">
         </div>
         
+        <!-- KOLOM CATATAN BARU -->
         <div class="notes-input-row">
             <textarea id="orderNote" class="notes-input" rows="2" placeholder="Catatan pesanan... (Contoh: Pedas, Bungkus, dll)"></textarea>
+        </div>
+
+        <!-- PRE-ORDER TOGGLE -->
+        <div class="po-toggle-box">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:700; color:#334155; cursor:pointer; user-select:none;">
+                <input type="checkbox" id="isPO" style="width:18px; height:18px; accent-color:var(--accent);" onchange="togglePO()">
+                Jadikan Pre-Order (Ambil Nanti)
+            </label>
+            <div id="poInputs" class="po-fields">
+                <input type="text" id="poName" class="notes-input" placeholder="Nama Pemesan (Wajib)">
+                <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                    <span style="font-size:13px; color:var(--muted); font-weight:600;">Jam Diambil:</span>
+                    <input type="time" id="poTime" class="notes-input" style="flex:1; padding:8px;">
+                </div>
+            </div>
         </div>
 
         <div style="margin-top:20px; padding-top:16px; border-top:2px solid #f1f5f9;">
@@ -283,16 +365,14 @@
             <span>Total</span>
             <span id="cartTotal">Rp 0</span>
           </div>
-          <div style="display:flex; gap:10px;">
-            <button class="btn secondary" style="flex:1; background:#e0e7ff; color:#4338ca; border-color:#c7d2fe;" onclick="showPreOrderModal()">📅 Pre Order</button>
-            <button class="btn" style="flex:1.5;" onclick="showCheckout()">💳 Bayar</button>
-          </div>
+          <button class="btn" onclick="showCheckout()">Bayar / Checkout</button>
         </div>
       </div>
 
     </div>
   </div>
 
+  <!-- FULL WIDTH HISTORY SECTION (Below Grid on Desktop) -->
   <div class="history-section" style="margin-top: 40px;">
     <div class="section-title">
       Riwayat Transaksi
@@ -310,55 +390,14 @@
 
 </div>
 
-<!-- New PO Trigger Modal -->
-<div id="poActionModal" class="modal-overlay">
-  <div class="modal-card alarm-accent">
-    <h3 id="poActionTitle" style="margin:0 0 4px;text-align:center;font-size:20px; color: var(--accent);">Peringatan Pre-Order!</h3>
-    <div id="poActionSub" style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px">Pesanan harus segera disiapkan</div>
-    
-    <div id="poActionDetails" class="alarm-detail-list"></div>
-
-    <button class="btn" id="btnProcessPO" style="background: var(--accent);">Proses Pesanan</button>
-    <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('poActionModal')">Tutup</button>
-  </div>
-</div>
-
-<div id="preOrderModal" class="modal-overlay">
-  <div class="modal-card">
-    <h3 style="margin:0 0 4px;text-align:center;font-size:20px; color: #1e293b;">Buat Pre Order</h3>
-    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px">Simpan pesanan untuk diambil nanti</div>
-    
-    <div style="margin-bottom: 12px;">
-        <label style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block;">Nama Pemesan</label>
-        <input type="text" id="poNameInput" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px;" placeholder="Contoh: Rudi">
-    </div>
-
-    <div style="margin-bottom: 20px;">
-        <label style="font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block;">Jam Pengambilan</label>
-        <input type="time" id="poTimeInput" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 18px; font-weight: bold; text-align: center;">
-    </div>
-
-    <button class="btn" style="background: #4338ca; box-shadow: 0 4px 6px -1px rgba(67, 56, 202, 0.3);" onclick="savePreOrder()">Simpan Pre Order</button>
-    <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('preOrderModal')">Batal</button>
-  </div>
-</div>
-
-<div id="preOrderListModal" class="modal-overlay">
-  <div class="modal-card" style="max-width: 500px;">
-    <h3 style="margin:0 0 16px;font-size:20px; color: #1e293b; display:flex; justify-content:space-between; align-items:center;">
-        Daftar Pre Order
-        <button onclick="closeModal('preOrderListModal')" style="background:none; border:none; font-size:20px; cursor:pointer; color:#64748b;">&times;</button>
-    </h3>
-    <div id="poListContainer" style="max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;"></div>
-  </div>
-</div>
-
+<!-- MODAL PILIH BLUETOOTH -->
 <div id="btModal" class="modal-overlay">
     <div class="modal-card">
         <h3 style="margin:0 0 12px;">Pilih Printer Bluetooth</h3>
         <div id="btLoading" style="display:none; color:var(--muted); font-size:13px; text-align:center;">Sedang memindai perangkat...</div>
         <div id="btDeviceList"></div>
         
+        <!-- BUTTON BARU: FORCE SCAN UNPAIRED -->
         <div style="margin-top:16px; padding-top:12px; border-top:1px solid #f1f5f9; text-align:center;">
             <div style="font-size:12px; color:#64748b; margin-bottom:8px">Printer belum muncul di list?</div>
             <button class="btn secondary" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd; font-size:13px; font-weight:700; width:100%" onclick="PrinterService.scanUnpaired()">
@@ -371,12 +410,15 @@
     </div>
 </div>
 
+<!-- MODAL PEMBAYARAN -->
 <div id="paymentModal" class="modal-overlay">
   <div class="modal-card">
     <h3 style="margin:0 0 4px;text-align:center;font-size:20px; color: #1e293b;">Pembayaran</h3>
+    
     <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px">Nominal Uang Diterima</div>
     
     <div class="total-display" id="modalTotal" style="font-size: 32px; margin-bottom: 20px;">Rp 0</div>
+    
     <input type="number" id="paidInput" class="money" placeholder="0">
     
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
@@ -394,10 +436,12 @@
       <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="PrinterService.printReceipt()">🔵 Print Struk Full</button>
     </div>
     <button class="btn" style="background: var(--green); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="processTransaction()">✅ Selesai</button>
+    
     <button class="btn secondary" style="width:100%; margin-top: 10px;" onclick="closeModal('paymentModal')">Batal</button>
   </div>
 </div>
 
+<!-- MODAL HARGA MANUAL (KHUSUS) -->
 <div id="customPriceModal" class="modal-overlay">
   <div class="modal-card">
     <h3 id="customPriceTitle" style="margin:0 0 4px;text-align:center;font-size:20px; color: #1e293b;">Harga Manual</h3>
@@ -415,6 +459,7 @@
   </div>
 </div>
 
+<!-- HALAMAN FULL SCREEN LAPORAN -->
 <div id="reportPage" class="slide-up">
   <div class="report-header">
     <button class="report-back-btn" onclick="closeReport()">
@@ -432,13 +477,121 @@
   </div>
 </div>
 
+<!-- MODAL ALARM PRE-ORDER (SEPERTI PANGGILAN) -->
+<div id="poAlarmScreen" class="alarm-ringing">
+    <div class="alarm-icon">🔔</div>
+    <h2 style="margin:0; font-size:28px; text-align:center; padding: 0 20px;">PRE-ORDER SEGERA DIAMBIL!</h2>
+    <div id="alarmName" style="font-size:20px; margin-top:12px; color:#94a3b8;">-</div>
+    <div id="alarmTime" style="font-size:36px; font-weight:800; margin-top:8px; color:var(--green);">-</div>
+    
+    <button class="btn-call" onclick="openPODetailFromAlarm()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        Lihat Pesanan
+    </button>
+    <button class="btn-dismiss" onclick="dismissAlarm()">Tutup Peringatan</button>
+</div>
+
+<!-- MODAL DETAIL PRE-ORDER -->
+<div id="poDetailModal" class="modal-overlay">
+  <div class="modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:20px; color:#1e293b;">Detail Pre-Order</h3>
+        <span id="poDetailTime" style="background:#fef3c7; color:#d97706; padding:4px 8px; border-radius:6px; font-weight:700; font-size:14px;">-</span>
+    </div>
+    <div style="font-size:16px; font-weight:700; color:#334155; margin-bottom:4px;">Pemesan: <span id="poDetailName" style="color:var(--accent);"></span></div>
+    <div id="poDetailItems" style="background:#f8fafc; padding:12px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:16px; font-size:14px; max-height:200px; overflow-y:auto;"></div>
+    
+    <button class="btn" style="background:var(--green); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="markPOReady()">✅ Pesanan Sudah Diambil</button>
+    <button class="btn secondary" style="width:100%; margin-top:10px;" onclick="closeModal('poDetailModal')">Tutup</button>
+  </div>
+</div>
+
+<!-- Audio element untuk nada dering -->
+<audio id="alarmSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto" loop></audio>
+
 <script>
+/* ================= HELPER GAMBAR KE HEX (ESCPOS) ================= */
+const EscPosHelper = {
+    // Fungsi konversi Image ke Hex (GS v 0)
+    getImageData: function(imageElement) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Resize jika terlalu lebar (max 380px untuk printer 58mm)
+        let w = imageElement.width;
+        let h = imageElement.height;
+        const MAX_W = 380;
+        
+        if (w > MAX_W) {
+            h = Math.floor(h * (MAX_W / w));
+            w = MAX_W;
+        }
+        
+        // Pastikan width kelipatan 8
+        if (w % 8 !== 0) {
+            w -= (w % 8);
+        }
+
+        canvas.width = w;
+        canvas.height = h;
+        
+        // Draw image (Putih jadi transparent dulu)
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(imageElement, 0, 0, w, h);
+        
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const data = imgData.data;
+        
+        // Algoritma Monochrome & Packing Bits
+        const result = [];
+        // Header GS v 0 m xL xH yL yH
+        // m=0 (normal), xL/xH width bytes, yL/yH height dots
+        
+        const xBytes = w / 8;
+        const xL = xBytes % 256;
+        const xH = Math.floor(xBytes / 256);
+        const yL = h % 256;
+        const yH = Math.floor(h / 256);
+        
+        // GS v 0
+        result.push(0x1D, 0x76, 0x30, 0, xL, xH, yL, yH);
+        
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < xBytes; x++) {
+                let byte = 0;
+                for (let b = 0; b < 8; b++) {
+                    const px = (x * 8) + b;
+                    const offset = (y * w + px) * 4;
+                    
+                    // Hitung brightness (R+G+B)/3
+                    const r = data[offset];
+                    const g = data[offset + 1];
+                    const bVal = data[offset + 2];
+                    const brightness = (r + g + bVal) / 3;
+                    
+                    // Jika GELAP (pixel < 128), set bit jadi 1
+                    if (brightness < 128) {
+                        byte |= (1 << (7 - b));
+                    }
+                }
+                result.push(byte);
+            }
+        }
+        
+        return new Uint8Array(result);
+    }
+};
+
 /* ================= PRINTER SERVICE (BLUETOOTH) ================= */
+
 const PrinterService = {
     isConnected: false,
     macAddress: null,
     isCordovaReady: false,
+    LOGO_URL: 'logoku.jpg', // NAMA FILE LOGO DI FOLDER WWW
 
+    // ESC/POS Commands Helpers
     ESC: {
         RESET: '\x1B\x40',
         ALIGN_LEFT: '\x1B\x61\x00',
@@ -455,91 +608,90 @@ const PrinterService = {
         document.addEventListener('deviceready', () => {
             console.log("Cordova Device Ready");
             this.isCordovaReady = true;
-
-            // Background Mode setup
-            if (window.cordova && cordova.plugins && cordova.plugins.backgroundMode) {
-                cordova.plugins.backgroundMode.enable();
-                cordova.plugins.backgroundMode.setDefaults({
-                    title: 'Kasir CAKSABAR Aktif',
-                    text: 'Memantau Pre-Order...',
-                    icon: 'icon', 
-                    color: '0891b2',
-                    resume: true,
-                    hidden: false,
-                    bigText: true
-                });
-                
-                cordova.plugins.backgroundMode.on('activate', function() {
-                    cordova.plugins.backgroundMode.disableWebViewOptimizations();
-                });
-            }
-
-            if (typeof cordova !== 'undefined' && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
-                cordova.plugins.notification.local.requestPermission(function(granted){});
-                
-                // Listener saat alarm trigger (bahkan saat background/closed)
-                cordova.plugins.notification.local.on('trigger', function (notification) {
-                    // Hanya mainkan suara pesanan (menghapus auto-open aplikasi)
-                    playTTS(notification.text);
-                });
-
-                const handleNotificationAction = function (notification) {
-                    if (window.cordova && cordova.plugins.backgroundMode) {
-                        cordova.plugins.backgroundMode.wakeUp();
-                        cordova.plugins.backgroundMode.unlock();
-                        cordova.plugins.backgroundMode.moveToForeground();
-                    }
-                    
-                    // Munculkan popup detail pesanan setelah aplikasi tampil
-                    if (notification.data && notification.data.poId) {
-                        setTimeout(() => showPOAction(notification.data.poId), 500);
-                    }
-                };
-
-                // Listener saat badan notifikasi diklik
-                cordova.plugins.notification.local.on('click', handleNotificationAction);
-                
-                // Listener saat tombol action "Lihat Pesanan" pada popup notifikasi diklik
-                cordova.plugins.notification.local.on('lihat_pesanan', handleNotificationAction);
-            }
         }, false);
     },
 
     connect: function() {
-        if (this.isConnected) { if(confirm('Putuskan koneksi printer?')) this.disconnect(); return; }
-        if (!this.isCordovaReady && typeof window.bluetoothSerial === 'undefined') return alert("Plugin Bluetooth belum siap. Gunakan APK.");
-        window.bluetoothSerial.isEnabled(() => this.scanPaired(), () => {
-            alert("Bluetooth mati. Harap aktifkan!");
-            window.bluetoothSerial.enable(() => this.scanPaired(), () => alert("Gagal aktifkan."));
-        });
+        if (this.isConnected) {
+            if(confirm('Putuskan koneksi printer?')) {
+                this.disconnect();
+            }
+            return;
+        }
+
+        if (!this.isCordovaReady && typeof window.bluetoothSerial === 'undefined') {
+            alert("Plugin Bluetooth belum siap atau tidak terinstal. Pastikan membuka aplikasi di Android.");
+            return;
+        }
+
+        window.bluetoothSerial.isEnabled(
+            () => { this.scanPaired(); },
+            () => {
+                alert("Bluetooth mati. Harap aktifkan Bluetooth di HP Anda terlebih dahulu!");
+                window.bluetoothSerial.enable(
+                    () => this.scanPaired(),
+                    () => alert("Gagal mengaktifkan Bluetooth.")
+                );
+            }
+        );
     },
 
     scanPaired: function() {
         document.getElementById('btModal').style.display = 'flex';
         document.getElementById('btLoading').style.display = 'block';
-        window.bluetoothSerial.list((devices) => {
-            this.showDeviceList(devices);
-            document.getElementById('btLoading').style.display = 'none';
-        }, (err) => alert("Gagal list devices."));
+        document.getElementById('btDeviceList').innerHTML = '';
+
+        window.bluetoothSerial.list(
+            (devices) => {
+                this.showDeviceList(devices);
+                document.getElementById('btLoading').style.display = 'none';
+            },
+            (err) => {
+                document.getElementById('btLoading').style.display = 'none';
+                alert("Gagal mengambil paired devices: " + err);
+            }
+        );
     },
 
     scanUnpaired: function() {
         document.getElementById('btLoading').style.display = 'block';
-        window.bluetoothSerial.discoverUnpaired((devices) => {
-            this.showDeviceList(devices);
-            document.getElementById('btLoading').style.display = 'none';
-        }, (err) => alert("Gagal scan sekitar."));
+        document.getElementById('btLoading').innerText = "Sedang mencari perangkat sekitar (10-15 detik)...";
+        document.getElementById('btDeviceList').innerHTML = '';
+
+        window.bluetoothSerial.discoverUnpaired(
+            (devices) => {
+                this.showDeviceList(devices);
+                document.getElementById('btLoading').style.display = 'none';
+                document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; 
+            },
+            (err) => {
+                document.getElementById('btLoading').style.display = 'none';
+                document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; 
+                alert("Gagal scan sekitar. Pastikan Anda mengklik 'IZINKAN' pada popup lokasi/nearby devices.");
+            }
+        );
     },
 
     showDeviceList: function(devices) {
+        document.getElementById('btModal').style.display = 'flex';
         const list = document.getElementById('btDeviceList');
         list.innerHTML = '';
-        if (devices.length === 0) { list.innerHTML = '<div style="padding:20px;text-align:center">Kosong.</div>'; return; }
-        const unique = Array.from(new Set(devices.map(a => a.id))).map(id => devices.find(a => a.id === id));
-        unique.forEach(d => {
+
+        if (devices.length === 0) {
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:#64748b;line-height:1.6">Tidak ada perangkat ditemukan.<br>Coba klik tombol <strong>Scan Sekitar</strong> di bawah.</div>';
+            return;
+        }
+
+        const uniqueDevices = Array.from(new Set(devices.map(a => a.id)))
+            .map(id => {
+            return devices.find(a => a.id === id)
+        });
+
+        uniqueDevices.forEach(d => {
             const item = document.createElement('div');
             item.className = 'bt-device-item';
-            item.innerHTML = `<span>${d.name || d.id}</span> <small>${d.address || d.id}</small>`;
+            const dispName = d.name ? d.name : (d.id ? d.id : 'Unknown Device');
+            item.innerHTML = `<span>${dispName}</span> <small style="color:#aaa">${d.address || d.id}</small>`;
             item.onclick = () => this.connectToDevice(d.address || d.id);
             list.appendChild(item);
         });
@@ -547,445 +699,1057 @@ const PrinterService = {
 
     connectToDevice: function(address) {
         document.getElementById('btModal').style.display = 'none';
-        window.bluetoothSerial.connect(address, () => this.onConnected(address), (err) => alert("Gagal koneksi."));
+        window.bluetoothSerial.connect(address, () => {
+            this.onConnected(address);
+        }, (err) => {
+            alert("Gagal koneksi ke " + address + ": " + err);
+        });
     },
 
     onConnected: function(addr) {
         this.isConnected = true;
         this.macAddress = addr;
         const btn = document.getElementById('btnConnect');
-        btn.classList.remove('disconnected'); btn.classList.add('connected');
+        btn.classList.remove('disconnected');
+        btn.classList.add('connected');
         alert("Printer Terhubung!");
     },
 
-    disconnect: function() { window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected()); },
+    disconnect: function() {
+        window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected());
+    },
 
     onDisconnected: function() {
         this.isConnected = false;
         const btn = document.getElementById('btnConnect');
-        btn.classList.remove('connected'); btn.classList.add('disconnected');
+        btn.classList.remove('connected');
+        btn.classList.add('disconnected');
+        alert("Printer Terputus");
     },
 
+    // ===== FUNGSI PRINT DENGAN GAMBAR =====
     printReceipt: function() {
-        if (!this.isConnected) return alert("Koneksikan printer!");
+        if (!this.isConnected) {
+            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
+            return;
+        }
+
         const tableNum = document.getElementById('tableNum').value || '-';
+        const note = document.getElementById('orderNote').value || '-';
+        const paid = parseInt(document.getElementById('paidInput').value) || 0;
         const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+        const change = paid - total;
+        const dateNow = new Date().toLocaleString('id-ID');
         const rp = (n) => Number(n).toLocaleString('id-ID');
-        let cmds = this.ESC.RESET + this.ESC.ALIGN_CENTER + "WARUNG CAKSABAR\n\n" + this.ESC.ALIGN_LEFT + "MEJA: " + tableNum + "\n--------------------------------\n";
-        cart.forEach(item => { cmds += (item.label + "                ").substring(0, 17) + ("   " + item.qty).slice(-3) + "  " + (rp(item.qty * item.price) + "          ").substring(0, 10) + "\n"; });
-        cmds += "--------------------------------\nTOTAL: " + rp(total) + "\n\n\n\n";
-        window.bluetoothSerial.write(cmds, null, null);
+
+        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
+        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
+        
+        const pair = (left, right, width = 32) => {
+            const spaces = Math.max(0, width - left.length - right.length);
+            return left + " ".repeat(spaces) + right;
+        };
+
+        // 1. SIAPKAN TEKS DULU
+        let cmds = "";
+        
+        // Info Toko (Dibawah Logo)
+        cmds += this.ESC.RESET;
+        cmds += this.ESC.ALIGN_CENTER;
+        cmds += this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED;
+        cmds += "Telp/WA: 0852 3141 3408" + this.ESC.FEED;
+        cmds += this.ESC.FEED;
+        
+        cmds += this.ESC.ALIGN_LEFT;
+        cmds += `${dateNow}` + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
+        if(note !== '-') {
+            cmds += `Catatan: ${note}` + this.ESC.FEED;
+        }
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        cmds += this.ESC.FONT_NORMAL;
+        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        cart.forEach(item => {
+            let suffix = "";
+            let lowerId = item.id.toLowerCase();
+            let lowerLabel = item.label.toLowerCase();
+            
+            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
+            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
+            
+            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
+            
+            let numStr = item.qty.toString();
+            let alignNum = ("   " + numStr).slice(-3);
+            let alignSuf = suffix ? " " + suffix : "  ";
+            let qtyFinal = alignNum + alignSuf; 
+
+            let nameStr = padRight(cleanLabel, 17);
+            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
+            
+            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
+            cmds += this.ESC.FEED;
+        });
+
+        cmds += "--------------------------------" + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON;
+        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
+        cmds += this.ESC.BOLD_OFF;
+        
+        cmds += pair("Bayar", "Rp " + rp(paid)) + this.ESC.FEED;
+        cmds += pair("Kembali", "Rp " + rp(change < 0 ? 0 : change)) + this.ESC.FEED;
+
+        cmds += this.ESC.FEED;
+        cmds += this.ESC.ALIGN_CENTER;
+        cmds += "Terima Kasih" + this.ESC.FEED;
+        cmds += "Simpan struk ini sbg bukti" + this.ESC.FEED;
+        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
+
+        // 2. PROSES GAMBAR DULU, BARU KIRIM TEXT
+        const img = new Image();
+        img.src = this.LOGO_URL;
+        
+        img.onload = () => {
+            try {
+                // Konversi gambar ke Hex Commands
+                const imgHexBuffer = EscPosHelper.getImageData(img);
+                
+                // Konversi Text cmds ke Uint8Array
+                const textBuffer = new Uint8Array(cmds.length);
+                for (let i = 0; i < cmds.length; i++) {
+                    textBuffer[i] = cmds.charCodeAt(i);
+                }
+
+                // Gabungkan Image Buffer + Text Buffer
+                const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
+                const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
+                
+                combined.set(centerCmd, 0);
+                combined.set(imgHexBuffer, centerCmd.length);
+                combined.set(textBuffer, centerCmd.length + imgHexBuffer.length);
+
+                window.bluetoothSerial.write(combined.buffer, 
+                    () => console.log("Print Img+Text Success"), 
+                    (err) => alert("Gagal Print: " + err)
+                );
+            } catch (e) {
+                alert("Gagal memproses gambar: " + e);
+                window.bluetoothSerial.write(cmds, null, null);
+            }
+        };
+
+        img.onerror = () => {
+            const backupHeader = this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED + cmds;
+            window.bluetoothSerial.write(backupHeader, 
+                () => alert("Logo tidak ditemukan, mencetak teks standar."), 
+                (err) => alert("Gagal print: " + err)
+            );
+        };
     },
 
+    // ===== FUNGSI PRINT SINGKAT (PESANAN/DAPUR) =====
     printShortReceipt: function() {
-        if (!this.isConnected) return alert("Koneksikan printer!");
+        if (!this.isConnected) {
+            alert("Harap koneksikan printer bluetooth terlebih dahulu di pojok kanan atas.");
+            return;
+        }
+
         const tableNum = document.getElementById('tableNum').value || '-';
-        let cmds = this.ESC.RESET + "PESANAN DAPUR\nMEJA: " + tableNum + "\n--------------------------------\n";
-        cart.forEach(item => { cmds += (item.label + "                    ").substring(0, 20) + " x" + item.qty + "\n"; });
-        cmds += "--------------------------------\n\n\n\n";
-        window.bluetoothSerial.write(cmds, null, null);
+        const note = document.getElementById('orderNote').value || '-';
+        const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+        const dateNow = new Date().toLocaleString('id-ID');
+        const rp = (n) => Number(n).toLocaleString('id-ID');
+
+        const padRight = (str, len) => (str + " ".repeat(len)).substring(0, len);
+        const padLeft = (str, len) => (" ".repeat(len) + str).slice(-len);
+        
+        const pair = (left, right, width = 32) => {
+            const spaces = Math.max(0, width - left.length - right.length);
+            return left + " ".repeat(spaces) + right;
+        };
+
+        let cmds = "";
+        
+        // Header Singkat (Hanya Meja & Waktu)
+        cmds += this.ESC.RESET;
+        cmds += this.ESC.ALIGN_LEFT;
+        cmds += `${dateNow}` + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
+        if(note !== '-') {
+            cmds += `Catatan: ${note}` + this.ESC.FEED;
+        }
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        cmds += this.ESC.FONT_NORMAL;
+        cmds += "ITEM             JML     TOTAL" + this.ESC.FEED;
+        cmds += "--------------------------------" + this.ESC.FEED;
+        
+        cart.forEach(item => {
+            let suffix = "";
+            let lowerId = item.id.toLowerCase();
+            let lowerLabel = item.label.toLowerCase();
+            
+            if (lowerId.includes('porsi') || lowerLabel.includes('porsi') || lowerId.includes('gule')) suffix = "P"; 
+            else if (lowerId.includes('tusuk') || lowerLabel.includes('tusuk')) suffix = "T"; 
+            
+            let cleanLabel = item.label.replace(/\s*\((Porsi|Tusuk)\)/gi, '');
+            
+            let numStr = item.qty.toString();
+            let alignNum = ("   " + numStr).slice(-3);
+            let alignSuf = suffix ? " " + suffix : "  ";
+            let qtyFinal = alignNum + alignSuf; 
+
+            let nameStr = padRight(cleanLabel, 17);
+            let totalStr = padLeft(rp(item.qty * item.price).replace("Rp ", ""), 10);
+            
+            cmds += nameStr + qtyFinal + totalStr + this.ESC.FEED;
+            cmds += this.ESC.FEED; // Jarak antar item
+        });
+
+        cmds += "--------------------------------" + this.ESC.FEED;
+        cmds += this.ESC.BOLD_ON;
+        cmds += pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED;
+        cmds += this.ESC.BOLD_OFF;
+
+        // Potong kertas (spasi beberapa baris)
+        cmds += this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
+
+        window.bluetoothSerial.write(cmds, 
+            () => console.log("Print Pesanan Success"), 
+            (err) => alert("Gagal print pesanan: " + err)
+        );
     }
 };
 
+/* ================= END PRINTER SERVICE ================= */
+
+/**
+ * DATA MENU & KONFIGURASI HARGA (DENGAN NAMA FILE GAMBAR WEBP)
+ */
 const DATA_MENU = [
+  // SATE KAMBING
+  { id: 'sk_tusuk', img: '', keywords: ['sate kambing', 'kambing'], label: 'Sate Kambing (Tusuk)', price: 2400, category: 'food', visible: false },
   { id: 'sk_porsi', img: 'sk_porsi.webp', keywords: ['sate kambing porsi'], label: 'Sate Kambing (Porsi)', price: 24000, category: 'food', visible: true },
+  
+  // SATE KAMBING POLOS
+  { id: 'sk_nl_tusuk', img: '', keywords: ['kambing tanpa lemak', 'no lemak', 'sk polos', 'kambing tl'], label: 'Sate Kambing TL (Tusuk)', price: 2600, category: 'food', visible: false },
   { id: 'sk_nl_porsi', img: 'sk_nl_porsi.webp', keywords: ['kambing tanpa lemak porsi'], label: 'Sate Kambing TL (Porsi)', price: 26000, category: 'food', visible: true },
+
+  // SATE AYAM
+  { id: 'sa_tusuk', img: '', keywords: ['sate ayam', 'ayam'], label: 'Sate Ayam (Tusuk)', price: 1200, category: 'food', visible: false },
   { id: 'sa_porsi', img: 'sa_porsi.webp', keywords: ['sate ayam porsi'], label: 'Sate Ayam (Porsi)', price: 12000, category: 'food', visible: true },
-  { id: 'gule', img: 'gule.webp', keywords: ['gule'], label: 'Gule (Porsi)', price: 24000, category: 'food', visible: true, isFlexible: true },
-  { id: 'kepala_kambing', img: 'kepala_kambing.webp', keywords: ['kepala'], label: 'Kepala Kambing', price: 0, category: 'food', visible: true, needsPriceInput: true, isFlexible: true },
-  { id: 'nasi', img: 'nasi.webp', keywords: ['nasi'], label: 'Nasi Putih', price: 3000, category: 'food', visible: true, isFlexible: true },
+
+  // GULE
+  { id: 'gule', img: 'gule.webp', keywords: ['gule', 'gulai'], label: 'Gule (Porsi)', price: 24000, category: 'food', visible: true, isFlexible: true },
+  
+  // KEPALA KAMBING (HARGA MANUAL)
+  { id: 'kepala_kambing', img: 'kepala_kambing.webp', keywords: ['kepala kambing', 'ndas', 'kepala'], label: 'Kepala Kambing', price: 0, category: 'food', visible: true, needsPriceInput: true, isFlexible: true },
+  
+  // MAKANAN LAIN
+  { id: 'nasi_gule', img: 'nasi_gule.webp', keywords: ['nasi gule', 'nasi gulai'], label: 'Nasi Gule', price: 14000, category: 'food', visible: true },
+  { id: 'nasi', img: 'nasi.webp', keywords: ['nasi', 'sego'], label: 'Nasi Putih', price: 3000, category: 'food', visible: true, isFlexible: true },
+  { id: 'kerupuk', img: 'kerupuk.webp', keywords: ['kerupuk', 'rupuk'], label: 'Kerupuk', price: 1000, category: 'food', visible: true },
+
+  // MINUMAN
   { id: 'es_teh', img: 'es_teh.webp', keywords: ['es teh'], label: 'Es Teh', price: 3000, category: 'drink', visible: true },
-  { id: 'es_jeruk', img: 'es_jeruk.webp', keywords: ['es jeruk'], label: 'Es Jeruk', price: 3000, category: 'drink', visible: true }
+  { id: 'es_jeruk', img: 'es_jeruk.webp', keywords: ['es jeruk'], label: 'Es Jeruk', price: 3000, category: 'drink', visible: true },
+  { id: 'teh_anget', img: 'teh_anget.webp', keywords: ['teh anget', 'teh hangat'], label: 'Teh Anget', price: 3000, category: 'drink', visible: true },
+  { id: 'jeruk_anget', img: 'jeruk_anget.webp', keywords: ['jeruk anget', 'jeruk hangat'], label: 'Jeruk Anget', price: 3000, category: 'drink', visible: true }
 ];
 
 let cart = [];
 let transactions = JSON.parse(localStorage.getItem('trx_cak_sabar') || '[]');
-let preOrders = JSON.parse(localStorage.getItem('po_cak_sabar') || '[]');
-let currentItemIdForPrice = null;
+const formatRp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
 
-function showPreOrderModal() {
-    if (cart.length === 0) return alert('Keranjang kosong!');
-    document.getElementById('preOrderModal').style.display = 'flex';
+let currentActivePO = null; // Menyimpan ID PO yang sedang berdering/dilihat detailnya
+
+/* ================= INIT ================= */
+function init() {
+  // Init Printer Service (Listen Device Ready)
+  PrinterService.init();
+
+  renderMenuGrid();
+  updateStats();
+  renderHistory();
+  initPOAlarmChecker(); // Inisialisasi pengecekan alarm PO
+  
+  setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    splash.classList.add('hide-splash');
+  }, 3000); 
 }
 
-function savePreOrder() {
-    const name = document.getElementById('poNameInput').value.trim();
-    const time = document.getElementById('poTimeInput').value;
-    if (!name || !time) return alert('Nama dan Waktu harus diisi!');
-
-    const uniqueId = Math.floor(Date.now() / 1000) % 10000000;
-    const itemDetails = cart.map(i => `${i.qty} ${i.label}`).join(', ');
-    const speechMsg = `Perhatian! Pesanan atas nama ${name} jam ${time}. Detail: ${itemDetails}. Harap segera diproses.`;
-
-    const po = {
-        id: uniqueId,
-        name: name,
-        time: time,
-        date: new Date().toLocaleDateString('id-ID'),
-        items: [...cart],
-        total: cart.reduce((a, b) => a + (b.price * b.qty), 0),
-        triggered30: false,
-        triggered15: false
-    };
-
-    preOrders.push(po);
-    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
-
-    // Schedule Cordova Notifications
-    if (typeof cordova !== 'undefined' && cordova.plugins.notification.local) {
-        const [h, m] = time.split(':').map(Number);
-        const poTime = new Date(); poTime.setHours(h, m, 0, 0);
-
-        const triggers = [
-            { id: uniqueId + 30, offset: 30, title: 'Persiapan Pre-Order (30 Menit)' },
-            { id: uniqueId + 15, offset: 15, title: 'Persiapan Pre-Order (15 Menit)' },
-            { id: uniqueId, offset: 0, title: 'Waktu Pengambilan Pre-Order!' }
-        ];
-
-        triggers.forEach(t => {
-            const triggerAt = new Date(poTime.getTime() - t.offset * 60000);
-            if (triggerAt > new Date()) {
-                cordova.plugins.notification.local.schedule({
-                    id: t.id,
-                    channel: 'panggilan_kasir',
-                    title: t.title,
-                    text: speechMsg,
-                    trigger: { at: triggerAt },
-                    data: { poId: po.id }, // Kirim ID untuk auto-popup
-                    foreground: true,
-                    wakeup: true,
-                    priority: 2, // Prioritas tinggi agar muncul sebagai Heads-Up / pop-up atas
-                    sound: 'res://platform_default',
-                    actions: [
-                        { id: 'lihat_pesanan', title: 'Lihat Pesanan' }
-                    ]
-                });
-            }
-        });
-    }
-
-    resetCart(); closeModal('preOrderModal'); updatePOBadge();
-    alert(`Pre-Order ${name} jam ${time} disimpan.`);
-}
-
-function checkAlarms() {
-    const now = new Date();
-    const today = now.toLocaleDateString('id-ID');
-    let updated = false;
-
-    preOrders.forEach(po => {
-        if (po.date !== today) return;
-        const [h, m] = po.time.split(':').map(Number);
-        const poDate = new Date(); poDate.setHours(h, m, 0, 0);
-        const diff = (poDate - now) / 60000;
-        const details = po.items.map(i => `${i.qty} ${i.label}`).join(', ');
-        const speechMsg = `Peringatan! Pesanan atas nama ${po.name} jam ${po.time}. Detail: ${details}.`;
-
-        if (diff <= 30 && diff > 29 && !po.triggered30) {
-            playTTS(speechMsg); showPOAction(po.id); po.triggered30 = true; updated = true;
-        } else if (diff <= 15 && diff > 14 && !po.triggered15) {
-            playTTS(speechMsg); showPOAction(po.id); po.triggered15 = true; updated = true;
-        }
-    });
-
-    if (updated) localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
-}
-
-function showPOAction(poId) {
-    const po = preOrders.find(p => p.id === poId);
-    if (!po) return;
-
-    const detailsEl = document.getElementById('poActionDetails');
-    detailsEl.innerHTML = `
-        <div style="font-weight:700; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:4px">
-            Pemesan: ${po.name} (${po.time})
-        </div>
-        ${po.items.map(i => `<div>• ${i.label} (x${i.qty})</div>`).join('')}
-    `;
-
-    const btn = document.getElementById('btnProcessPO');
-    btn.onclick = () => confirmProcessPO(po.id);
-
-    document.getElementById('poActionModal').style.display = 'flex';
-}
-
-function confirmProcessPO(poId) {
-    const poIndex = preOrders.findIndex(p => p.id === poId);
-    if (poIndex === -1) return;
-    const po = preOrders[poIndex];
-
-    // Masukan ke keranjang
-    cart = [...po.items];
-    renderCart();
-
-    // Hapus dari daftar preorder
-    preOrders.splice(poIndex, 1);
-    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
-    
-    // Batalkan notifikasi sisa
-    if (typeof cordova !== 'undefined' && cordova.plugins.notification.local) {
-        cordova.plugins.notification.local.cancel([poId, poId + 15, poId + 30]);
-    }
-
-    updatePOBadge();
-    closeModal('poActionModal');
-    alert("Pesanan berhasil dimasukkan ke keranjang dan dihapus dari Pre-Order.");
-}
-
-function playTTS(text) {
-    if (typeof window.TTS !== 'undefined') {
-        window.TTS.speak({ text: text, locale: 'id-ID', rate: 0.9 });
-    } else if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'id-ID'; u.rate = 0.9; window.speechSynthesis.speak(u);
-    }
-}
-
+/* ================= RENDER MENU GRID ================= */
 function renderMenuGrid() {
-  const f = document.getElementById('foodGrid'), d = document.getElementById('drinkGrid');
-  if(!f || !d) return;
-  f.innerHTML = ''; d.innerHTML = '';
+  const foodContainer = document.getElementById('foodGrid');
+  const drinkContainer = document.getElementById('drinkGrid');
+
+  // Bersihkan container terlebih dahulu
+  foodContainer.innerHTML = '';
+  drinkContainer.innerHTML = '';
+
   DATA_MENU.forEach(item => {
     if (!item.visible) return;
+
     const el = document.createElement('div');
-    el.className = 'menu-item'; el.id = `item_${item.id}`;
-    el.onclick = () => item.needsPriceInput ? openCustomPriceModal(item.id) : addToCart(item);
-    el.innerHTML = `<img src="${item.img}" class="menu-img" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22><rect width=%22400%22 height=%22300%22 fill=%22%23e2e8f0%22/></svg>'">
-      <div class="menu-info"><div class="m-name">${item.label}</div><div class="m-price-sm">${item.price>0?formatRp(item.price):'Manual'}</div></div>
-      <div class="menu-controls-wrapper" id="controls_${item.id}"></div>`;
-    (item.category === 'food' ? f : d).appendChild(el);
+    el.className = 'menu-item';
+    el.id = `item_${item.id}`; // Tambahkan ID untuk manipulasi CSS Slide Down
+    // Event klik diletakkan pada kontainer agar bisa di-tap di mana saja
+    el.onclick = (e) => handleCardClick(item.id, e);
+    
+    // SVG Placeholder yang proporsional 4:3
+    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#e2e8f0"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="28" font-weight="bold" fill="#94a3b8">Foto</text></svg>`;
+    const placeholderImg = `data:image/svg+xml;utf8,${encodeURIComponent(svgStr)}`;
+
+    el.innerHTML = `
+      <img src="${item.img}" class="menu-img" alt="${item.label}" onerror="this.src='${placeholderImg}'">
+      <div class="menu-info">
+         <div class="m-name">${item.label}</div>
+         <div class="m-price-sm">${item.price > 0 ? formatRp(item.price) : '<span style="color:#f59e0b">Manual</span>'}</div>
+      </div>
+      <div class="menu-controls-wrapper" id="controls_${item.id}">
+         <!-- Tombol +/- akan terinjeksi di sini dan meluncur ke bawah -->
+      </div>
+    `;
+
+    if (item.category === 'food') foodContainer.appendChild(el);
+    else drinkContainer.appendChild(el);
   });
+  
+  // Update tombol setelah render
   updateMenuGridUI();
+}
+
+function handleCardClick(itemId, event) {
+    // Abaikan jika yang diklik adalah tombol + / - secara langsung
+    if (event && event.target.closest('.qty-controls')) return;
+
+    const item = DATA_MENU.find(i => i.id === itemId);
+    const totalQty = cart.filter(c => c.id === itemId).reduce((sum, c) => sum + c.qty, 0);
+    
+    // Jika belum ada di keranjang ATAU item tersebut butuh harga manual (seperti Kepala Kambing)
+    if (totalQty === 0 || item.needsPriceInput) {
+        if (item.needsPriceInput) {
+            openCustomPriceModal(item.id);
+        } else {
+            addToCart(item, 1);
+        }
+    } else {
+        // Jika sudah ada (dan bukan manual), klik card langsung nambah 1 (mempercepat kasir)
+        addToCart(item, 1);
+    }
 }
 
 function updateMenuGridUI() {
   DATA_MENU.forEach(item => {
-    const ctrl = document.getElementById(`controls_${item.id}`);
-    const card = document.getElementById(`item_${item.id}`);
-    if(!ctrl || !card) return;
-    const qty = cart.filter(c => c.id === item.id).reduce((s, c) => s + c.qty, 0);
-    if (qty > 0) {
-      card.classList.add('has-qty');
-      ctrl.innerHTML = `<div class="qty-controls">
-        <button class="qty-btn minus" onclick="event.stopPropagation(); decreaseFromCart('${item.id}', ${item.price})">−</button>
-        <div class="qty-val">${qty}</div>
-        <button class="qty-btn plus" onclick="event.stopPropagation(); addToCart(DATA_MENU.find(i=>i.id==='${item.id}'))">+</button>
-      </div>`;
-    } else card.classList.remove('has-qty');
+    const controlContainer = document.getElementById(`controls_${item.id}`);
+    const menuItemCard = document.getElementById(`item_${item.id}`);
+    if(!controlContainer || !menuItemCard) return;
+
+    // Kalkulasi total di keranjang untuk ID ini
+    const totalQty = cart.filter(c => c.id === item.id).reduce((sum, c) => sum + c.qty, 0);
+
+    if (totalQty > 0) {
+      // Tambahkan class agar div animasi slide down terbuka
+      menuItemCard.classList.add('has-qty');
+      
+      if(item.needsPriceInput) {
+          // Khusus menu manual (Kepala Kambing dll) cukup tampilkan Qty Total
+          controlContainer.innerHTML = `
+            <div class="qty-controls" style="border:none; background:none; box-shadow:none; justify-content:center;">
+               <div class="qty-val" style="color:var(--accent); font-size:16px;">${totalQty} Masuk Keranjang</div>
+            </div>
+          `;
+      } else {
+          // Menu reguler: Tampilkan tombol Plus Minus
+          controlContainer.innerHTML = `
+            <div class="qty-controls">
+               <button class="qty-btn minus" onclick="event.stopPropagation(); decreaseFromCart('${item.id}', ${item.price})">−</button>
+               <div class="qty-val">${totalQty}</div>
+               <button class="qty-btn plus" onclick="event.stopPropagation(); addToCart(DATA_MENU.find(i=>i.id==='${item.id}'))">+</button>
+            </div>
+          `;
+      }
+    } else {
+      // Jika kosong, hilangkan class agar div animasi tertutup
+      menuItemCard.classList.remove('has-qty');
+      // Kontrol bisa dibiarkan kosong, efek slide-up akan menyembunyikannya
+    }
   });
 }
 
-function addToCart(item, qty = 1, p = null) {
-  const pr = p || item.price;
-  const ex = cart.find(c => c.id === item.id && c.price === pr);
-  ex ? ex.qty += qty : cart.push({ id: item.id, label: item.label, price: pr, qty: qty });
+/* ================= CART LOGIC ================= */
+function addToCart(item, qty = 1, customPrice = null) {
+  const priceToUse = customPrice || item.price;
+  const existing = cart.find(c => c.id === item.id && c.price === priceToUse);
+  
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({
+      id: item.id,
+      label: item.label,
+      price: priceToUse,
+      qty: qty
+    });
+  }
   renderCart();
 }
 
-function decreaseFromCart(id, p) {
-  const i = cart.findIndex(c => c.id === id && c.price === p);
-  if (i !== -1) { cart[i].qty--; if (cart[i].qty <= 0) cart.splice(i, 1); }
+function decreaseFromCart(itemId, price) {
+  const index = cart.findIndex(c => c.id === itemId && c.price === price);
+  if (index !== -1) {
+    cart[index].qty -= 1;
+    if (cart[index].qty <= 0) {
+      cart.splice(index, 1);
+    }
+  }
   renderCart();
 }
 
 function renderCart() {
-  const l = document.getElementById('cartList'); l.innerHTML = '';
-  let t = 0; updateMenuGridUI();
-  if (cart.length === 0) l.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;border:2px dashed #e2e8f0;border-radius:12px">Belum ada item</div>';
-  else {
-    cart.forEach((c, i) => {
-      t += c.price * c.qty;
-      l.innerHTML += `<div class="cart-row"><div class="c-name">${c.label}</div><div class="c-qty">x${c.qty}</div><div>${formatRp(c.price*c.qty)}</div><button onclick="removeItem(${i})" style="color:red;border:none;background:none;font-size:18px;cursor:pointer">×</button></div>`;
+  const container = document.getElementById('cartList');
+  container.innerHTML = '';
+  let total = 0;
+
+  // Update UI Kartu Menu (Sinkronisasi Qty)
+  updateMenuGridUI();
+
+  if (cart.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:30px;border:2px dashed #e2e8f0;border-radius:12px; background:#f8fafc">Keranjang masih kosong</div>';
+  } else {
+    cart.forEach((c, idx) => {
+      total += c.price * c.qty;
+      
+      const row = document.createElement('div');
+      row.className = 'cart-row';
+      row.innerHTML = `
+        <div class="c-name">${c.label} <div style="color:#64748b; font-size:12px; font-weight:400">@${formatRp(c.price)}</div></div>
+        <div class="c-qty">x${c.qty}</div>
+        <div class="c-price">${formatRp(c.price * c.qty)}</div>
+        <button onclick="removeItem(${idx})" style="margin-left:8px;border:none;background:none;color:var(--red);font-weight:bold;cursor:pointer; padding:4px; font-size:16px;">×</button>
+      `;
+      container.appendChild(row);
     });
   }
-  document.getElementById('cartTotal').textContent = formatRp(t);
-  
-  // Update change display if payment modal is open
-  const paid = parseInt(document.getElementById('paidInput').value) || 0;
-  document.getElementById('changeDisplay').textContent = formatRp(Math.max(0, paid - t));
+  document.getElementById('cartTotal').textContent = formatRp(total);
 }
 
-function removeItem(i) { cart.splice(i, 1); renderCart(); }
-function resetCart() { cart = []; renderCart(); document.getElementById('aiInput').value = ''; }
-function formatRp(n) { return 'Rp ' + Number(n).toLocaleString('id-ID'); }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-// UI Helpers for quick input
-function addNol(val) {
-    const input = document.getElementById('paidInput');
-    input.value = (input.value || '') + val;
-    renderCart();
+function removeItem(idx) {
+  cart.splice(idx, 1);
+  renderCart();
 }
 
-function addNolCustom(val) {
-    const input = document.getElementById('customPriceInput');
-    input.value = (input.value || '') + val;
+function resetCart() {
+  cart = [];
+  renderCart();
+  document.getElementById('aiInput').value = '';
+  document.getElementById('tableNum').value = '';
+  document.getElementById('orderNote').value = '';
+  document.getElementById('isPO').checked = false;
+  document.getElementById('poName').value = '';
+  document.getElementById('poTime').value = '';
+  togglePO();
 }
+
+/* ================= PRE-ORDER LOGIC ================= */
+function togglePO() {
+    const isPO = document.getElementById('isPO').checked;
+    document.getElementById('poInputs').style.display = isPO ? 'flex' : 'none';
+    if(isPO) {
+        document.getElementById('poName').focus();
+    }
+}
+
+function initPOAlarmChecker() {
+    // Cek setiap 30 detik
+    setInterval(checkPOAlarms, 30000);
+    
+    // Listener notifikasi Cordova (jika aplikasi di background)
+    document.addEventListener('deviceready', () => {
+        if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+            cordova.plugins.notification.local.on('click', function (notification) {
+                const trxId = notification.data ? notification.data.trxId : null;
+                if (trxId) {
+                    currentActivePO = trxId;
+                    showPODetailModal(trxId);
+                }
+            });
+        }
+    }, false);
+}
+
+function checkPOAlarms() {
+    const now = new Date();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+
+    transactions.forEach(t => {
+        // Cek jika ini PO, status belum selesai, dan belum dinotifikasi
+        if (t.isPO && t.poStatus === 'pending' && !t.notified) {
+            if (!t.poTime) return;
+            
+            const [poH, poM] = t.poTime.split(':').map(Number);
+            
+            // Hitung selisih waktu dalam menit
+            const poTotalMins = (poH * 60) + poM;
+            const currentTotalMins = (currentHours * 60) + currentMinutes;
+            const diffMins = poTotalMins - currentTotalMins;
+            
+            // Trigger 15 menit sebelum waktu pengambilan
+            if (diffMins <= 15 && diffMins >= -60) { // Limit ke -60 menit agar tidak trigger jika kelewatan 1 jam
+                triggerPOAlarm(t);
+                t.notified = true;
+                localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+            }
+        }
+    });
+}
+
+function triggerPOAlarm(trx) {
+    currentActivePO = trx.id;
+    
+    // 1. Notifikasi Sistem / Push Notification Browser
+    const title = "Waktunya Siapkan Pre-Order!";
+    const text = `Pesanan a/n ${trx.poName} untuk jam ${trx.poTime} segera diambil.`;
+    
+    if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+        cordova.plugins.notification.local.schedule({
+            id: trx.id,
+            title: title,
+            text: text,
+            foreground: true,
+            vibrate: true,
+            data: { trxId: trx.id }
+        });
+    } else if (typeof Notification !== 'undefined') {
+        if (Notification.permission === "granted") {
+            const notif = new Notification(title, { body: text });
+            notif.onclick = () => { window.focus(); showPODetailModal(trx.id); };
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    new Notification(title, { body: text });
+                }
+            });
+        }
+    }
+
+    // 2. Tampilan Full Screen (Telepon) di dalam aplikasi
+    document.getElementById('alarmName').textContent = trx.poName;
+    document.getElementById('alarmTime').textContent = trx.poTime;
+    document.getElementById('poAlarmScreen').style.display = 'flex';
+    
+    // Mainkan suara
+    const sound = document.getElementById('alarmSound');
+    sound.currentTime = 0;
+    sound.play().catch(e => console.log("Auto-play terblokir", e));
+}
+
+function dismissAlarm() {
+    document.getElementById('poAlarmScreen').style.display = 'none';
+    document.getElementById('alarmSound').pause();
+}
+
+function openPODetailFromAlarm() {
+    dismissAlarm();
+    if (currentActivePO) {
+        showPODetailModal(currentActivePO);
+    }
+}
+
+function showPODetailModal(trxId) {
+    const trx = transactions.find(t => t.id == trxId);
+    if (!trx) return;
+    
+    currentActivePO = trx.id;
+    document.getElementById('poDetailName').textContent = trx.poName;
+    document.getElementById('poDetailTime').textContent = trx.poTime;
+    
+    let itemsHtml = '';
+    trx.items.forEach(i => {
+        itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px dashed #cbd5e1; padding-bottom:8px;">
+            <span>${i.label} ${trx.note && trx.note !== '-' ? `<br><small style="color:#d97706;">Catatan: ${trx.note}</small>` : ''}</span>
+            <span style="font-weight:bold;">x${i.qty}</span>
+        </div>`;
+    });
+    
+    // Jika belum dibayar lunas
+    const statusBayar = trx.paid >= trx.total ? '<span style="color:var(--green)">Lunas</span>' : '<span style="color:var(--red)">Belum Lunas (' + formatRp(trx.total - trx.paid) + ')</span>';
+    itemsHtml += `<div style="text-align:right; margin-top:12px; font-weight:bold;">Status Bayar: ${statusBayar}</div>`;
+    
+    document.getElementById('poDetailItems').innerHTML = itemsHtml;
+    document.getElementById('poDetailModal').style.display = 'flex';
+}
+
+function markPOReady() {
+    if (!currentActivePO) return;
+    const trx = transactions.find(t => t.id == currentActivePO);
+    if (trx) {
+        trx.poStatus = 'completed';
+        localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+        alert('Pre-Order berhasil ditandai selesai/diambil!');
+        renderHistory();
+        closeModal('poDetailModal');
+    }
+}
+
+/* ================= CUSTOM PRICE LOGIC ================= */
+let currentCustomItemId = null;
 
 function openCustomPriceModal(itemId) {
-    currentItemIdForPrice = itemId;
+    currentCustomItemId = itemId;
     const item = DATA_MENU.find(i => i.id === itemId);
     document.getElementById('customPriceTitle').textContent = `Harga ${item.label}`;
     document.getElementById('customPriceInput').value = '';
     document.getElementById('customPriceModal').style.display = 'flex';
+    setTimeout(() => document.getElementById('customPriceInput').focus(), 100);
+}
+
+function addNolCustom(val) {
+    const input = document.getElementById('customPriceInput');
+    input.value = input.value + val;
+    input.focus();
 }
 
 function confirmCustomPrice() {
-    const price = parseInt(document.getElementById('customPriceInput').value);
-    if (!price || price <= 0) return alert("Masukkan harga yang valid!");
-    const item = DATA_MENU.find(i => i.id === currentItemIdForPrice);
-    addToCart(item, 1, price);
+    if (!currentCustomItemId) return;
+    const priceVal = parseInt(document.getElementById('customPriceInput').value);
+    
+    if (!priceVal || priceVal <= 0) {
+        alert("Masukkan nominal harga yang valid!");
+        return;
+    }
+    
+    const item = DATA_MENU.find(i => i.id === currentCustomItemId);
+    if (item) {
+        // Masukkan ke keranjang dengan harga kustom
+        addToCart(item, 1, priceVal);
+    }
     closeModal('customPriceModal');
 }
 
+/* ================= AI PARSER LOGIC ================= */
 function parseAI() {
-  let txt = document.getElementById('aiInput').value.toLowerCase().replace(/rb/g, '000');
-  const codes = { 'a': 'sate ayam', 'k': 'sate kambing', 'kt': 'kambing tanpa lemak', 'g': 'gule', 'n': 'nasi' };
-  Object.keys(codes).forEach(k => txt = txt.replace(new RegExp(`\\b${k}\\b`, 'g'), codes[k]));
-  const orders = txt.split(/[\n,]+/);
-  orders.forEach(line => {
-    let nums = (line.match(/\d+/g) || []).map(Number);
-    let q = 1, p = null; nums.forEach(n => n > 500 ? p = n : q = n);
-    let match = DATA_MENU.find(m => m.keywords.some(k => line.includes(k)));
-    if (match) addToCart(match, q, p);
+  let text = document.getElementById('aiInput').value.toLowerCase();
+  
+  text = text.replace(/rb/g, '000');
+  text = text.replace(/\ba\b/g, 'sate ayam'); 
+  text = text.replace(/\bk\b/g, 'sate kambing');
+  text = text.replace(/\bkt\b/g, 'kambing tanpa lemak');
+  text = text.replace(/\bg\b/g, 'gule');
+  text = text.replace(/\bn\b/g, 'nasi'); // Penambahan Kode N = Nasi
+
+  const feedbackEl = document.getElementById('aiFeedback');
+
+  if (!text.trim()) {
+      feedbackEl.style.display = 'none';
+      return;
+  }
+
+  const orders = text.split(/[\n,]+/);
+  let itemsAdded = 0; // Variabel untuk melacak item yang berhasil ditambahkan
+
+  orders.forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+
+    let numbers = line.match(/\d+(\.\d+)?/g); 
+    let numericValues = numbers ? numbers.map(n => parseInt(n.replace(/\./g, ''))) : [1];
+    
+    let qty = 1;
+    let customPrice = null;
+
+    numericValues.forEach(val => {
+      if (val > 500) customPrice = val;
+      else qty = val;
+    });
+
+    let bestMatch = null;
+    let maxScore = 0;
+
+    DATA_MENU.forEach(item => {
+      item.keywords.forEach(key => {
+        if (line.includes(key)) {
+          if (key.length > maxScore) {
+            maxScore = key.length;
+            bestMatch = item;
+          }
+        }
+      });
+    });
+
+    if (bestMatch) {
+      if (customPrice && bestMatch.isFlexible) {
+        addToCart(bestMatch, 1, customPrice); 
+        itemsAdded++;
+      } 
+      else if (customPrice && !bestMatch.isFlexible) {
+         let calculatedQty = Math.floor(customPrice / bestMatch.price);
+         if(calculatedQty > 0) {
+             addToCart(bestMatch, calculatedQty);
+             itemsAdded++;
+         }
+      }
+      else {
+        if (bestMatch.needsPriceInput && !customPrice) {
+            // Jika AI memanggil Kepala Kambing tapi tidak ada nominal harga ("kepala kambing 1")
+            // Abaikan agar tidak masuk keranjang dengan harga 0
+        } else {
+            addToCart(bestMatch, qty);
+            itemsAdded++;
+        }
+      }
+    }
   });
-  document.getElementById('aiInput').value = '';
+
+  if (itemsAdded > 0) {
+      // BERHASIL MASUK KERANJANG
+      document.getElementById('aiInput').value = '';
+      feedbackEl.textContent = '✅ Berhasil masuk keranjang!';
+      feedbackEl.style.backgroundColor = '#ecfdf5';
+      feedbackEl.style.color = '#059669';
+      feedbackEl.style.display = 'block';
+      setTimeout(() => { feedbackEl.style.display = 'none'; }, 3000); // Pesan hilang setelah 3 detik
+  } else {
+      // GAGAL
+      feedbackEl.textContent = '❌ Gagal! Cek ketikan atau nama menu.';
+      feedbackEl.style.backgroundColor = '#fef2f2';
+      feedbackEl.style.color = '#dc2626';
+      feedbackEl.style.display = 'block';
+      // Teks tidak dihapus agar bisa diedit kembali oleh pengguna
+  }
 }
 
+/* ================= CHECKOUT & TRANSACTION ================= */
 function showCheckout() {
-    if (cart.length === 0) return;
-    document.getElementById('modalTotal').textContent = formatRp(cart.reduce((a, b) => a + (b.price * b.qty), 0));
-    document.getElementById('paidInput').value = '';
-    document.getElementById('changeDisplay').textContent = 'Rp 0';
-    document.getElementById('paymentModal').style.display = 'flex';
+  if (cart.length === 0) return alert('Keranjang kosong');
+  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+  
+  document.getElementById('modalTotal').textContent = formatRp(total);
+  document.getElementById('paidInput').value = '';
+  document.getElementById('changeDisplay').textContent = 'Rp 0';
+  document.getElementById('paymentModal').style.display = 'flex';
+  
+  document.getElementById('paidInput').oninput = (e) => {
+    const paid = parseInt(e.target.value) || 0;
+    const change = paid - total;
+    document.getElementById('changeDisplay').textContent = formatRp(change);
+    document.getElementById('changeDisplay').style.color = change < 0 ? '#ef4444' : '#10b981';
+  };
+  
+  setTimeout(() => document.getElementById('paidInput').focus(), 100);
+}
+
+function addNol(val) {
+  const input = document.getElementById('paidInput');
+  input.value = input.value + val;
+  input.dispatchEvent(new Event('input'));
+  input.focus();
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
 }
 
 function processTransaction() {
-    const total = cart.reduce((a,b)=>a+b.price*b.qty,0);
-    transactions.unshift({ 
-        id: Date.now(), 
-        date: new Date().toLocaleString('id-ID'), 
-        total: total, 
-        items: [...cart] 
-    });
-    localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
-    resetCart(); closeModal('paymentModal'); updateStats(); renderHistory();
-    alert("Transaksi berhasil disimpan!");
+  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+  const paid = parseInt(document.getElementById('paidInput').value) || 0;
+  const tableNum = document.getElementById('tableNum').value || '-';
+  const note = document.getElementById('orderNote').value || '-';
+  
+  const isPO = document.getElementById('isPO').checked;
+  const poName = document.getElementById('poName').value;
+  const poTime = document.getElementById('poTime').value;
+
+  if (isPO) {
+      if (!poName.trim()) return alert('Nama pemesan Pre-Order wajib diisi!');
+      if (!poTime) return alert('Jam pengambilan Pre-Order wajib diisi!');
+  }
+
+  if (paid < total && paid !== 0) {
+    if(!confirm('Uang kurang! Tetap lanjutkan sebagai utang/kurang bayar?')) return;
+  }
+
+  const trx = {
+    id: Date.now(),
+    date: new Date().toLocaleString('id-ID'),
+    tableNum: tableNum,
+    note: note, // Simpan catatan
+    items: [...cart],
+    total: total,
+    paid: paid,
+    isPO: isPO,
+    poName: poName,
+    poTime: poTime,
+    poStatus: isPO ? 'pending' : null,
+    notified: false
+  };
+
+  transactions.unshift(trx);
+  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+  
+  // Minta izin notifikasi browser pertama kali transaksi PO (agar saat di latar belakang bisa muncul notif)
+  if (isPO && typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+  }
+  
+  resetCart();
+  closeModal('paymentModal');
+  updateStats();
+  renderHistory();
+  alert(isPO ? 'Pre-Order Berhasil Disimpan!' : 'Transaksi Berhasil!');
 }
 
-function updateStats() {
-    const today = new Date().toLocaleDateString('id-ID');
-    const trx = transactions.filter(t => t.date.includes(today));
-    document.getElementById('omsetVal').textContent = formatRp(trx.reduce((a, b) => a + b.total, 0));
-    document.getElementById('trxVal').textContent = trx.length;
-}
 
-function renderHistory() {
-    const t = document.getElementById('historyTable');
-    t.innerHTML = '<tr><th>Waktu</th><th>Pesanan</th><th>Total</th></tr>';
-    transactions.slice(0, 10).forEach(trx => {
-        t.innerHTML += `<tr><td>${trx.date.split(',')[1]}</td><td>${trx.items.map(i=>i.label).join(', ')}</td><td>${formatRp(trx.total)}</td></tr>`;
-    });
-}
-
-function resetHistory() {
-    if(!confirm("Hapus semua riwayat transaksi?")) return;
-    transactions = [];
-    localStorage.removeItem('trx_cak_sabar');
-    updateStats(); renderHistory();
-}
-
-function exportExcel() {
-    if(transactions.length === 0) return alert("Tidak ada data untuk diexport!");
-    const wsData = transactions.map(t => ({
-        Waktu: t.date,
-        Pesanan: t.items.map(i => `${i.label} x${i.qty}`).join(', '),
-        Total: t.total
-    }));
-    const ws = XLSX.utils.json_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Laporan");
-    XLSX.writeFile(wb, `Laporan_CakSabar_${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-function updatePOBadge() {
-    const active = preOrders.filter(p => p.date === new Date().toLocaleDateString('id-ID'));
-    document.getElementById('poBadgeCount').textContent = active.length;
-    document.getElementById('poBadgeCount').style.display = active.length > 0 ? 'block' : 'none';
-}
-
-function showPreOrderList() {
-    const container = document.getElementById('poListContainer'); container.innerHTML = '';
-    const active = preOrders.filter(p => p.date === new Date().toLocaleDateString('id-ID'));
-    if(active.length === 0) container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Tidak ada pre-order aktif</div>';
-    active.forEach(po => {
-        container.innerHTML += `<div style="padding:15px; background:#f8fafc; border-radius:12px; margin-bottom:10px; border:1px solid #e2e8f0">
-            <div style="display:flex; justify-content:space-between"><b>${po.name}</b> <span>${po.time}</span></div>
-            <div style="font-size:12px; color:#64748b; margin-top:4px">${po.items.map(i=>`${i.qty} ${i.label}`).join(', ')}</div>
-            <div style="margin-top:10px; display:flex; gap:8px">
-                <button onclick="showPOAction(${po.id})" style="flex:1; background:var(--accent); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer">Detail</button>
-                <button onclick="deletePreOrder(${po.id})" style="color:red; background:none; border:none; cursor:pointer">Batal</button>
-            </div>
-        </div>`;
-    });
-    document.getElementById('preOrderListModal').style.display = 'flex';
-}
-
-function deletePreOrder(id) {
-    if(!confirm("Hapus Pre-Order ini?")) return;
-    preOrders = preOrders.filter(p => p.id !== id);
-    localStorage.setItem('po_cak_sabar', JSON.stringify(preOrders));
-    showPreOrderList(); updatePOBadge();
-}
-
+/* ================= REPORT PAGE ================= */
 function showReport() {
-    const page = document.getElementById('reportPage');
-    const content = document.getElementById('reportContent');
-    content.innerHTML = '';
-    
-    // Group items by name
-    const itemSummary = {};
-    transactions.forEach(t => {
-        t.items.forEach(item => {
-            if(!itemSummary[item.label]) itemSummary[item.label] = { qty: 0, total: 0 };
-            itemSummary[item.label].qty += item.qty;
-            itemSummary[item.label].total += (item.qty * item.price);
-        });
-    });
+  const salesStats = {}; 
+  
+  transactions.forEach(t => {
+    t.items.forEach(item => {
+      const key = `${item.id}_${item.price}`;
+      
+      if (!salesStats[key]) {
+        const menuRef = DATA_MENU.find(m => m.id === item.id);
+        const category = menuRef ? menuRef.category : 'food';
+        const isCustom = menuRef ? (menuRef.price !== item.price) : false;
 
-    let html = '<table><tr><th>Item</th><th>Terjual</th><th>Total</th></tr>';
-    for(const name in itemSummary) {
-        html += `<tr class="report-row">
-            <td>${name}</td>
-            <td class="report-qty">${itemSummary[name].qty}</td>
-            <td>${formatRp(itemSummary[name].total)}</td>
-        </tr>`;
+        salesStats[key] = {
+          id: item.id, // Menyimpan ID agar bisa dicek jenis satenya
+          label: item.label,
+          price: item.price,
+          qty: 0,
+          category: category,
+          isCustom: isCustom
+        };
+      }
+      salesStats[key].qty += item.qty;
+    });
+  });
+
+  const soldItems = Object.values(salesStats).sort((a, b) => b.qty - a.qty);
+  const foods = soldItems.filter(i => i.category === 'food');
+  const drinks = soldItems.filter(i => i.category === 'drink');
+  
+  let foodHtml = '';
+  let drinkHtml = '';
+  let totalFood = 0;
+  let totalDrink = 0;
+
+  const renderRow = (item) => {
+    let priceDisplay = `<span style="color:#64748b;font-size:12px">@ ${formatRp(item.price)}</span>`;
+    if (item.isCustom) {
+      priceDisplay = `<span style="color:#ef4444;font-size:12px;background:#fee2e2;padding:2px 8px;border-radius:6px;font-weight:600">Khusus: ${formatRp(item.price)}</span>`;
     }
+
+    // LOGIKA PERHITUNGAN TUSUK
+    let qtyDisplay = item.qty;
+    
+    // Cek ID item apakah termasuk Sate Porsi (Porsi x 10)
+    if (['sk_porsi', 'sk_nl_porsi', 'sa_porsi'].includes(item.id)) {
+        qtyDisplay = `${item.qty} Porsi <span style="font-weight:800;color:var(--accent);font-size:12px;display:block">(${item.qty * 10} Tusuk)</span>`;
+    } 
+    // Cek ID item apakah termasuk Sate Tusuk (Eceran)
+    else if (['sk_tusuk', 'sk_nl_tusuk', 'sa_tusuk'].includes(item.id)) {
+        qtyDisplay = `${item.qty} Tusuk`;
+    }
+
+    return `
+      <tr class="report-row">
+        <td>
+          <div style="font-weight:600;color:#0f172a; margin-bottom:2px;">${item.label}</div>
+          <div>${priceDisplay}</div>
+        </td>
+        <td style="text-align:right;vertical-align:middle" class="report-qty">${qtyDisplay}</td>
+      </tr>`;
+  };
+
+  if (foods.length > 0) {
+    foodHtml += '<tr><td colspan="2" class="report-group-header">Makanan & Nasi</td></tr>';
+    foods.forEach(i => {
+      foodHtml += renderRow(i);
+      totalFood += i.qty;
+    });
+  }
+
+  if (drinks.length > 0) {
+    drinkHtml += '<tr><td colspan="2" class="report-group-header" style="border-top:1px solid #e2e8f0;">Minuman</td></tr>';
+    drinks.forEach(i => {
+      drinkHtml += renderRow(i);
+      totalDrink += i.qty;
+    });
+  }
+
+  const container = document.getElementById('reportContent');
+  
+  if (totalFood === 0 && totalDrink === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:60px 20px;">Belum ada data penjualan.<br>Lakukan transaksi terlebih dahulu.</div>';
+  } else {
+    let html = '<table style="width:100%">';
+    html += '<tr style="background:#f8fafc"><th style="padding:14px 16px; border-bottom:2px solid #e2e8f0;">Menu Item</th><th style="text-align:right;padding:14px 16px; border-bottom:2px solid #e2e8f0;">Qty / Tusuk</th></tr>';
+    html += foodHtml;
+    html += drinkHtml;
     html += '</table>';
     
-    if(Object.keys(itemSummary).length === 0) {
-        html = '<div style="padding:40px;text-align:center;color:var(--muted)">Belum ada data penjualan</div>';
-    }
-    
-    content.innerHTML = html;
-    page.style.display = 'flex';
+    html += `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:32px; padding: 0 20px 20px;">
+        <div style="background:#ecfeff;padding:20px;border-radius:12px;text-align:center;border:1px solid #cffafe">
+           <div style="font-size:13px;color:#0e7490;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Transaksi Makanan</div>
+           <div style="font-weight:800;font-size:28px;color:#0891b2">${totalFood}</div>
+        </div>
+        <div style="background:#fff7ed;padding:20px;border-radius:12px;text-align:center;border:1px solid #ffedd5">
+           <div style="font-size:13px;color:#c2410c;font-weight:700;margin-bottom:6px; text-transform:uppercase;">Total Transaksi Minuman</div>
+           <div style="font-weight:800;font-size:28px;color:#ea580c">${totalDrink}</div>
+        </div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+  }
+
+  const reportPage = document.getElementById('reportPage');
+  reportPage.style.display = 'flex';
+  document.body.style.overflow = 'hidden'; 
 }
 
 function closeReport() {
-    document.getElementById('reportPage').style.display = 'none';
+  const reportPage = document.getElementById('reportPage');
+  reportPage.style.display = 'none';
+  document.body.style.overflow = '';
 }
 
-function init() {
-    PrinterService.init();
-    renderMenuGrid(); updateStats(); renderHistory(); updatePOBadge();
-    
-    // Re-check change on paid input
-    document.getElementById('paidInput').addEventListener('input', renderCart);
-    
-    setInterval(checkAlarms, 15000); // Check alarms every 15s
-    setTimeout(() => document.getElementById('splash-screen').classList.add('hide-splash'), 2000);
+/* ================= HISTORY & STATS ================= */
+function updateStats() {
+  const today = new Date().toLocaleDateString('id-ID');
+  const todaysTrx = transactions.filter(t => t.date.includes(today)); 
+  const omset = todaysTrx.reduce((a, b) => a + b.total, 0);
+  document.getElementById('omsetVal').textContent = formatRp(omset);
+  document.getElementById('trxVal').textContent = todaysTrx.length;
 }
+
+function renderHistory() {
+  const table = document.getElementById('historyTable');
+  table.innerHTML = `
+    <tr>
+      <th style="width:120px;">Waktu</th>
+      <th style="width:60px;">Meja</th>
+      <th>Detail Pesanan</th>
+      <th style="text-align:right; width:120px;">Total</th>
+      <th style="text-align:center;width:100px;">Aksi</th>
+    </tr>`;
+  
+  transactions.slice(0, 20).forEach(t => {
+    const itemsStr = t.items.map(i => `${i.label} <span style="color:#64748b; font-weight:600">x${i.qty}</span>`).join(', ');
+    const mejaInfo = t.tableNum ? `<span style="background:#f1f5f9;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px; color:#475569; border:1px solid #e2e8f0;">${t.tableNum}</span>` : '-';
+    const noteInfo = t.note && t.note !== '-' ? `<div style="font-size:11px;color:#d97706;margin-top:2px;">Catatan: ${t.note}</div>` : '';
+
+    let poBadge = '';
+    let poAction = '';
+    if (t.isPO) {
+        const bg = t.poStatus === 'completed' ? '#10b981' : '#f59e0b';
+        poBadge = `<div style="display:inline-block; margin-top:4px;"><span class="po-badge" style="background:${bg}; margin-left:0;">PO: ${t.poName} (${t.poTime})</span></div>`;
+        poAction = `<button onclick="showPODetailModal(${t.id})" class="action-btn" style="color:#0ea5e9; background:#e0f2fe; border:1px solid #bae6fd; margin-right:6px;" title="Lihat Detail PO">👁️</button>`;
+    }
+
+    const row = `
+      <tr>
+        <td style="color:#64748b;font-size:12px; font-family:monospace;">${t.date.split(',')[1] || t.date}</td>
+        <td style="text-align:center">${mejaInfo}</td>
+        <td style="line-height:1.5">${itemsStr}${noteInfo}${poBadge}</td>
+        <td style="text-align:right;font-weight:700; color:#0f172a;">${formatRp(t.total)}</td>
+        <td style="text-align:center; white-space:nowrap">
+          ${poAction}
+          <button onclick="editTransaction(${t.id})" class="action-btn edit" title="Edit Transaksi">
+             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button onclick="deleteTransaction(${t.id})" class="action-btn del" title="Hapus Transaksi">
+             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </td>
+      </tr>
+    `;
+    table.innerHTML += row;
+  });
+
+  if (transactions.length === 0) {
+    table.innerHTML += '<tr><td colspan="5" style="text-align:center;padding:40px;color:#cbd5e1; font-style:italic;">Belum ada riwayat transaksi hari ini</td></tr>';
+  }
+}
+
+function editTransaction(id) {
+  if (cart.length > 0) {
+    if (!confirm('Keranjang saat ini tidak kosong. Mengedit transaksi lama akan menimpa keranjang saat ini. Lanjutkan?')) return;
+  }
+  
+  const trxIndex = transactions.findIndex(t => t.id === id);
+  if (trxIndex === -1) return;
+  const trx = transactions[trxIndex];
+  
+  if(!confirm('Edit transaksi ini? Item akan kembali ke keranjang dan transaksi akan dihapus dari riwayat.')) return;
+  
+  cart = [...trx.items];
+  
+  if (trx.tableNum && trx.tableNum !== '-') {
+      document.getElementById('tableNum').value = trx.tableNum;
+  } else {
+      document.getElementById('tableNum').value = '';
+  }
+  
+  if (trx.note && trx.note !== '-') {
+      document.getElementById('orderNote').value = trx.note;
+  } else {
+      document.getElementById('orderNote').value = '';
+  }
+
+  transactions.splice(trxIndex, 1);
+  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+  
+  renderCart();
+  updateStats();
+  renderHistory();
+  
+  // Scroll to Top on Mobile, or ensure visible on Desktop
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function deleteTransaction(id) {
+  if(!confirm('Yakin ingin menghapus transaksi ini?')) return;
+  transactions = transactions.filter(t => t.id !== id);
+  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+  updateStats();
+  renderHistory();
+}
+
+function resetHistory() {
+  if (transactions.length === 0) return alert('Riwayat sudah kosong.');
+  if(!confirm('PERINGATAN: Anda akan menghapus SEMUA riwayat transaksi.\nData omset hari ini juga akan terhapus.\n\nLanjutkan?')) return;
+  transactions = [];
+  localStorage.setItem('trx_cak_sabar', JSON.stringify([]));
+  updateStats();
+  renderHistory();
+  alert('Riwayat berhasil dikosongkan.');
+}
+
+function exportExcel() {
+  const data = transactions.map(t => ({
+    Tanggal: t.date,
+    Meja: t.tableNum || '-',
+    Catatan: t.note || '-',
+    Total: t.total,
+    Bayar: t.paid,
+    Item: t.items.map(i => `${i.label} (${i.qty})`).join('; ')
+  }));
+  
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
+  XLSX.writeFile(wb, "Laporan_Warung_Caksabar.xlsx");
+}
+
 init();
 </script>
 </body>

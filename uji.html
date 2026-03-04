@@ -1240,6 +1240,7 @@ function triggerPOAlarm(trx) {
             vibrate: true,
             wakeup: true, // Menyalakan layar otomatis
             priority: 2, // Prioritas tinggi (2) agar muncul sebagai Floating/Heads-up notification
+            channel: 'po_alarm_urgent', // MEMBUAT CHANNEL BARU UNTUK MEMAKSA ANDROID MERESET PRIORITAS KE TINGGI
             lockscreen: true, // Tampilkan di lockscreen
             actions: [
                 { id: 'view_po', title: 'Lihat Pesanan' }

@@ -1514,9 +1514,32 @@ function processTransaction() {
   transactions.unshift(trx);
   localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
   
-  // Minta izin notifikasi browser pertama kali transaksi PO (agar saat di latar belakang bisa muncul notif)
-  if (isPO && typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
-      Notification.requestPermission();
+  // JADWALKAN ALARM PRE-ORDER (MENGGUNAKAN NATIVE OS ANDROID)
+  if (isPO && window.cordova && cordova.plugins && cordova.plugins.notification) {
+      const now = new Date();
+      const [poH, poM] = poTime.split(':').map(Number);
+      
+      let triggerDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), poH, poM, 0);
+      triggerDate.setMinutes(triggerDate.getMinutes() - 15); // Alarm berbunyi 15 menit sebelumnya
+      
+      if (triggerDate.getTime() < now.getTime()) {
+          triggerDate = new Date(now.getTime() + 5000); // Jika waktu kurang dari 15 menit, bunyikan 5 detik lagi
+      }
+
+      cordova.plugins.notification.local.schedule({
+          id: trx.id,
+          title: "Waktunya Siapkan Pre-Order!",
+          text: `Pesanan a/n ${poName} untuk jam ${poTime} segera diambil.`,
+          trigger: { at: triggerDate },
+          foreground: true,
+          vibrate: true,
+          wakeup: true,
+          priority: 2,
+          channel: 'po_alarm_urgent',
+          lockscreen: true,
+          actions: [{ id: 'view_po', title: 'Lihat Pesanan' }],
+          data: { trxId: trx.id }
+      });
   }
   
   resetCart();

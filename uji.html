@@ -479,29 +479,28 @@ const PrinterService = {
                 
                 // Listener saat alarm trigger (bahkan saat background/closed)
                 cordova.plugins.notification.local.on('trigger', function (notification) {
-                    if (cordova.plugins.backgroundMode) {
+                    // Hanya mainkan suara pesanan (menghapus auto-open aplikasi)
+                    playTTS(notification.text);
+                });
+
+                const handleNotificationAction = function (notification) {
+                    if (window.cordova && cordova.plugins.backgroundMode) {
                         cordova.plugins.backgroundMode.wakeUp();
                         cordova.plugins.backgroundMode.unlock();
                         cordova.plugins.backgroundMode.moveToForeground();
                     }
                     
-                    // Mainkan suara pesanan
-                    playTTS(notification.text);
-                    
-                    // Munculkan popup detail pesanan jika ada data poId
+                    // Munculkan popup detail pesanan setelah aplikasi tampil
                     if (notification.data && notification.data.poId) {
-                        showPOAction(notification.data.poId);
+                        setTimeout(() => showPOAction(notification.data.poId), 500);
                     }
-                });
+                };
 
-                // Listener saat notifikasi diklik
-                cordova.plugins.notification.local.on('click', function (notification) {
-                    if (cordova.plugins.backgroundMode) cordova.plugins.backgroundMode.moveToForeground();
-                    playTTS(notification.text);
-                    if (notification.data && notification.data.poId) {
-                        showPOAction(notification.data.poId);
-                    }
-                });
+                // Listener saat badan notifikasi diklik
+                cordova.plugins.notification.local.on('click', handleNotificationAction);
+                
+                // Listener saat tombol action "Lihat Pesanan" pada popup notifikasi diklik
+                cordova.plugins.notification.local.on('lihat_pesanan', handleNotificationAction);
             }
         }, false);
     },
@@ -655,8 +654,11 @@ function savePreOrder() {
                     data: { poId: po.id }, // Kirim ID untuk auto-popup
                     foreground: true,
                     wakeup: true,
-                    priority: 2,
-                    sound: 'res://platform_default'
+                    priority: 2, // Prioritas tinggi agar muncul sebagai Heads-Up / pop-up atas
+                    sound: 'res://platform_default',
+                    actions: [
+                        { id: 'lihat_pesanan', title: 'Lihat Pesanan' }
+                    ]
                 });
             }
         });

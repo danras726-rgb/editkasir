@@ -738,40 +738,68 @@ function initPOAlarmChecker() {
     document.addEventListener('pause', () => { isAppForeground = false; }, false);
     document.addEventListener('resume', () => { isAppForeground = true; }, false);
 
+    // SISTEM PENDETEKSI INTERNAL: Mencegah notifikasi status bar jika aplikasi sedang dibuka
+    setInterval(() => {
+        if (!isAppForeground) return; // Hanya jalan jika aplikasi sedang terbuka di layar
+        
+        const now = Date.now();
+        let needsUpdate = false;
+        
+        transactions.forEach(trx => {
+            if (trx.isPO && trx.poStatus !== 'completed') {
+                // Deteksi Alarm Persiapan (1 detik lebih awal dari native)
+                if (trx.prepTime && !trx.notifiedPrep && now >= (trx.prepTime - 1000)) {
+                    trx.notifiedPrep = true; needsUpdate = true;
+                    // BATALKAN NOTIF NATIVE AGAR TIDAK MUNCUL DI STATUS BAR
+                    if (window.cordova && cordova.plugins.notification.local) {
+                        cordova.plugins.notification.local.cancel(trx.safeId);
+                    }
+                    triggerPOAlarmScreen(trx, "Siapkan Pre-Order!");
+                }
+                
+                // Deteksi Alarm Pengambilan (1 detik lebih awal dari native)
+                if (trx.pickupTime && !trx.notifiedPickup && now >= (trx.pickupTime - 1000)) {
+                    trx.notifiedPickup = true; needsUpdate = true;
+                    // BATALKAN NOTIF NATIVE AGAR TIDAK MUNCUL DI STATUS BAR
+                    if (window.cordova && cordova.plugins.notification.local) {
+                        cordova.plugins.notification.local.cancel(trx.safeId + 1);
+                    }
+                    triggerPOAlarmScreen(trx, "Ambil Pre-Order!");
+                }
+            }
+        });
+        
+        if (needsUpdate) {
+            localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+        }
+    }, 1000);
+
     document.addEventListener('deviceready', () => {
         if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
             
             cordova.plugins.notification.local.requestPermission(function (granted) {});
 
-            // Menangani kejadian saat Notifikasi / Tombol diklik
-            const handleNotifClick = function (notification) {
+            // Menangani kejadian saat Notifikasi di status bar diklik (Saat dari Background)
+            cordova.plugins.notification.local.on('click', function (notification) {
                 const trxId = notification.data ? notification.data.trxId : null;
                 if (trxId) {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
-                        // Notifikasi ini akan otomatis membuka aplikasi (launch: true).
-                        // Setelah aplikasi terbuka, tampilkan layar detail PO-nya.
                         triggerPOAlarmScreen(trx, notification.title);
                         cordova.plugins.notification.local.clear(notification.id);
                     }
                 }
-            };
-
-            cordova.plugins.notification.local.on('click', handleNotifClick);
-
-            // Handler untuk trigger (saat waktu alarm tiba)
+            });
+            
+            // Jaga-jaga jika Interval JS terlewat dan trigger native jalan di background
             cordova.plugins.notification.local.on('trigger', function (notification) {
                 const trxId = notification.data ? notification.data.trxId : null;
                 if (trxId) {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
-                        // Jika aplikasi sedang terbuka berdasar pelacak native
-                        if (isAppForeground) {
-                            // BERSIIHKAN PAKSA notifikasi native dari status bar seketika
-                            cordova.plugins.notification.local.clear(notification.id);
-                            // Munculkan layar merah alarm HTML
-                            triggerPOAlarmScreen(trx, notification.title);
-                        }
+                        if (notification.id === trx.safeId) { trx.notifiedPrep = true; }
+                        if (notification.id === (trx.safeId + 1)) { trx.notifiedPickup = true; }
+                        localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
                     }
                 }
             });
@@ -907,15 +935,12 @@ function processTransaction() {
 
   if (paid < total && paid !== 0) { if(!confirm('Uang kurang! Tetap lanjutkan sebagai utang/kurang bayar?')) return; }
 
-  const trx = {
-    id: Date.now(), date: new Date().toLocaleString('id-ID'), tableNum: tableNum, note: note, items: [...cart], total: total, paid: paid, isPO: isPO, poName: poName, poTime: poTime, poStatus: isPO ? 'pending' : null, notified: false
-  };
+  let prepTimeVal = null;
+  let pickupTimeVal = null;
+  // Membuat ID Notifikasi yang AMAN (TIdak Overflow di sistem Android Java)
+  const safeId = Math.floor(Math.random() * 100000000);
 
-  transactions.unshift(trx);
-  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
-  
-  // JADWALKAN ALARM PRE-ORDER (Sistem Heads-Up Android Murni)
-  if (isPO && window.cordova && cordova.plugins && cordova.plugins.notification) {
+  if (isPO) {
       const now = new Date();
       const [poH, poM] = poTime.split(':').map(Number);
       
@@ -925,18 +950,46 @@ function processTransaction() {
       let prepDate = new Date(pickupDate.getTime() - (15 * 60000));
       if (prepDate.getTime() < now.getTime()) prepDate = new Date(now.getTime() + 5000); 
 
+      prepTimeVal = prepDate.getTime();
+      pickupTimeVal = pickupDate.getTime();
+  }
+
+  const trx = {
+    id: Date.now(), 
+    safeId: safeId,
+    date: new Date().toLocaleString('id-ID'), 
+    tableNum: tableNum, 
+    note: note, 
+    items: [...cart], 
+    total: total, 
+    paid: paid, 
+    isPO: isPO, 
+    poName: poName, 
+    poTime: poTime, 
+    poStatus: isPO ? 'pending' : null, 
+    notifiedPrep: false,
+    notifiedPickup: false,
+    prepTime: prepTimeVal,
+    pickupTime: pickupTimeVal
+  };
+
+  transactions.unshift(trx);
+  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+  
+  // JADWALKAN ALARM PRE-ORDER (Sistem Heads-Up Android Murni)
+  if (isPO && window.cordova && cordova.plugins && cordova.plugins.notification) {
       // 1. Alarm 15 Menit Sebelum
       cordova.plugins.notification.local.schedule({
-          id: trx.id, 
+          id: safeId, 
           title: "Siapkan Pre-Order!",
           text: `Pesanan a/n ${poName} untuk jam ${poTime}`,
-          trigger: { at: prepDate },
+          trigger: { at: new Date(prepTimeVal) },
           foreground: false,
           vibrate: true,
           wakeup: true, // Membangunkan layar (jika mati)
           priority: 2, // 2 adalah IMPORTANCE_MAX -> Memicu popup melayang (Heads-up)
           category: 'call', // Kategori khusus untuk memaksa popup prioritas tinggi
-          channel: 'po_channel_v2', 
+          channel: 'po_channel_v3', 
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }
@@ -944,16 +997,16 @@ function processTransaction() {
       
       // 2. Alarm Tepat Jam Pengambilan
       cordova.plugins.notification.local.schedule({
-          id: trx.id + 1,
+          id: safeId + 1,
           title: "Ambil Pre-Order!",
           text: `Pesanan a/n ${poName} (${poTime}) sudah diambil?`,
-          trigger: { at: pickupDate },
+          trigger: { at: new Date(pickupTimeVal) },
           foreground: false,
           vibrate: true,
           wakeup: true,
           priority: 2, 
           category: 'call',
-          channel: 'po_channel_v2', 
+          channel: 'po_channel_v3', 
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }

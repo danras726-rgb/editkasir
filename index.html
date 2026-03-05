@@ -724,6 +724,9 @@ function resetCart() {
 }
 
 /* ================= ALARM & NOTIFIKASI NATIVE (HEADS-UP) ================= */
+// KODE BARU: Pelacak status layar native Cordova
+let isAppForeground = true;
+
 function togglePO() {
     const isPO = document.getElementById('isPO').checked;
     document.getElementById('poInputs').style.display = isPO ? 'flex' : 'none';
@@ -731,6 +734,10 @@ function togglePO() {
 }
 
 function initPOAlarmChecker() {
+    // Event listener asli Cordova (Sangat akurat)
+    document.addEventListener('pause', () => { isAppForeground = false; }, false);
+    document.addEventListener('resume', () => { isAppForeground = true; }, false);
+
     document.addEventListener('deviceready', () => {
         if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
             
@@ -745,6 +752,7 @@ function initPOAlarmChecker() {
                         // Notifikasi ini akan otomatis membuka aplikasi (launch: true).
                         // Setelah aplikasi terbuka, tampilkan layar detail PO-nya.
                         triggerPOAlarmScreen(trx, notification.title);
+                        cordova.plugins.notification.local.clear(notification.id);
                     }
                 }
             };
@@ -757,13 +765,13 @@ function initPOAlarmChecker() {
                 if (trxId) {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
-                        // Jika aplikasi sedang terbuka dan aktif di layar pengguna, langsung munculkan popup UI
-                        if (document.visibilityState === 'visible') {
-                            triggerPOAlarmScreen(trx, notification.title);
-                            // Bersihkan notifikasi native agar tidak muncul di status bar
+                        // Jika aplikasi sedang terbuka berdasar pelacak native
+                        if (isAppForeground) {
+                            // BERSIIHKAN PAKSA notifikasi native dari status bar seketika
                             cordova.plugins.notification.local.clear(notification.id);
+                            // Munculkan layar merah alarm HTML
+                            triggerPOAlarmScreen(trx, notification.title);
                         }
-                        // Jika aplikasi di background, biarkan notifikasi native Heads-Up yang bekerja di atas layar.
                     }
                 }
             });
@@ -928,7 +936,7 @@ function processTransaction() {
           wakeup: true, // Membangunkan layar (jika mati)
           priority: 2, // 2 adalah IMPORTANCE_MAX -> Memicu popup melayang (Heads-up)
           category: 'call', // Kategori khusus untuk memaksa popup prioritas tinggi
-          channel: 'po_alarm_urgent',
+          channel: 'po_channel_v2', // KODE BARU: Reset nama channel agar Android 13 mereset aturannya
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }
@@ -945,7 +953,7 @@ function processTransaction() {
           wakeup: true,
           priority: 2, 
           category: 'call',
-          channel: 'po_alarm_urgent',
+          channel: 'po_channel_v2', // KODE BARU: Reset nama channel agar Android 13 mereset aturannya
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }

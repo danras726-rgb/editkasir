@@ -936,7 +936,7 @@ function processTransaction() {
           wakeup: true, // Membangunkan layar (jika mati)
           priority: 2, // 2 adalah IMPORTANCE_MAX -> Memicu popup melayang (Heads-up)
           category: 'call', // Kategori khusus untuk memaksa popup prioritas tinggi
-          channel: 'po_channel_v2', // KODE BARU: Reset nama channel agar Android 13 mereset aturannya
+          channel: 'po_channel_v2', 
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }
@@ -953,7 +953,7 @@ function processTransaction() {
           wakeup: true,
           priority: 2, 
           category: 'call',
-          channel: 'po_channel_v2', // KODE BARU: Reset nama channel agar Android 13 mereset aturannya
+          channel: 'po_channel_v2', 
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }

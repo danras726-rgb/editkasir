@@ -56,8 +56,23 @@
     .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
     
     .header-actions { display: flex; gap: 8px; align-items: center; }
-    .header-btn { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: 0.2s; color: #334155; display: flex; align-items: center; justify-content: center; position: relative; }
-    .header-btn:hover { background: #e2e8f0; color: var(--accent); transform: translateY(-1px); }
+    .header-btn {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        appearance: none;
+    }
+    .header-btn:hover { background: #f8fafc; color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+    .header-btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     
     .po-badge-count { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.4); border: 2px solid white; }
 
@@ -66,6 +81,29 @@
     .bt-status-dot { width: 8px; height: 8px; border-radius: 50%; position: absolute; top: 6px; right: 6px; }
     .connected .bt-status-dot { background: #10b981; }
     .disconnected .bt-status-dot { background: #ef4444; }
+
+    /* === MENU DROPDOWN (GARIS TIGA) === */
+    .dropdown-menu {
+        position: absolute; top: calc(100% + 8px); right: 0; background: white; border-radius: 16px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+        border: 1px solid #e2e8f0; min-width: 240px; z-index: 1000; display: none; flex-direction: column; overflow: hidden;
+    }
+    .dropdown-menu.show { display: flex; animation: slideDown 0.2s ease-out forwards; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .menu-item-dropdown {
+        padding: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+        color: #334155; font-weight: 600; font-size: 15px; transition: background 0.2s;
+    }
+    .menu-item-dropdown:hover { background: #f8fafc; color: var(--accent); }
+    .menu-item-dropdown:not(:last-child) { border-bottom: 1px solid #f1f5f9; }
+    .menu-item-dropdown svg { width: 20px; height: 20px; color: #64748b; transition: 0.2s; }
+    .menu-item-dropdown:hover svg { color: var(--accent); }
+    
+    .menu-item-dropdown#btnConnect.connected { background: #ecfdf5; color: #059669; border-color: transparent; }
+    .menu-item-dropdown#btnConnect.disconnected { background: #fef2f2; color: #dc2626; border-color: transparent; }
+    .menu-item-dropdown#btnConnect .bt-status-dot { top: -2px; right: -4px; position: absolute; }
+    .badge-dropdown { background: var(--red); color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: auto; display:none; }
 
     /* === COMPONENTS === */
     .card-box { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; }
@@ -218,18 +256,34 @@
       </div>
     </div>
     
-    <div class="header-actions">
-      <button class="header-btn" onclick="showActivePOModal()" title="Daftar Pre-Order Aktif">
-        📝<span id="poActiveCount" class="po-badge-count" style="display:none;">0</span>
+    <div class="header-actions" style="position: relative;">
+      <button class="header-btn" onclick="toggleMainMenu()" title="Menu Utama">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        <span id="mainMenuBadge" class="po-badge-count" style="display:none; top: -5px; right: -5px;">0</span>
       </button>
 
-      <button id="btnConnect" class="header-btn disconnected" onclick="PrinterService.connect()" title="Koneksi Printer Bluetooth">
-        <span class="bt-status-dot"></span>
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.71,7.71L12,2h-1v7.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L11,14.41V22h1l5.71-5.71L13.41,12L17.71,7.71z M13,5.83l1.88,1.88L13,9.59V5.83z M13,18.17v-3.76l1.88,1.88L13,18.17z"/></svg>
-      </button>
-      <button class="header-btn" onclick="showReport()" title="Laporan Penjualan">
-        📊
-      </button>
+      <div id="mainMenu" class="dropdown-menu">
+         <div class="menu-item-dropdown" onclick="showActivePOPage()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+            Daftar Pre-Order
+            <span id="poActiveCountDropdown" class="badge-dropdown">0</span>
+         </div>
+         <div class="menu-item-dropdown" onclick="showHistoryPage()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Riwayat Transaksi
+         </div>
+         <div class="menu-item-dropdown" onclick="showReport()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            Laporan Penjualan
+         </div>
+         <div class="menu-item-dropdown disconnected" id="btnConnect" onclick="PrinterService.connect()">
+            <span style="position:relative; display:flex; align-items:center;">
+               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.71,7.71L12,2h-1v7.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L11,14.41V22h1l5.71-5.71L13.41,12L17.71,7.71z M13,5.83l1.88,1.88L13,9.59V5.83z M13,18.17v-3.76l1.88,1.88L13,18.17z"/></svg>
+               <span class="bt-status-dot"></span>
+            </span>
+            <span>Bluetooth Printer</span>
+         </div>
+      </div>
     </div>
   </header>
 
@@ -291,6 +345,10 @@
         </div>
         
         <div class="notes-input-row">
+            <input type="text" id="poName" class="notes-input" placeholder="Nama Pemesan (Wajib jika PO)">
+        </div>
+
+        <div class="notes-input-row">
             <textarea id="orderNote" class="notes-input" rows="2" placeholder="Catatan pesanan... (Contoh: Pedas, Bungkus, dll)"></textarea>
         </div>
 
@@ -300,7 +358,6 @@
                 Jadikan Pre-Order (Ambil Nanti)
             </label>
             <div id="poInputs" class="po-fields">
-                <input type="text" id="poName" class="notes-input" placeholder="Nama Pemesan (Wajib)">
                 <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
                     <span style="font-size:13px; color:var(--muted); font-weight:600;">Jam Diambil:</span>
                     <input type="time" id="poTime" class="notes-input" style="flex:1; padding:8px;">
@@ -317,21 +374,6 @@
         </div>
       </div>
 
-    </div>
-  </div>
-
-  <div class="history-section" style="margin-top: 40px;">
-    <div class="section-title">
-      Riwayat Transaksi (Selesai)
-      <div style="display:flex;gap:8px">
-        <button onclick="resetHistory()" style="font-size:12px;padding:8px 12px;border-radius:8px;border:none;background:#fee2e2;color:#991b1b;cursor:pointer;font-weight:600; transition:0.2s;">Reset</button>
-        <button onclick="exportExcel()" style="font-size:12px;padding:8px 12px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:600; color: #334155; transition:0.2s;">Export Excel</button>
-      </div>
-    </div>
-    <div class="table-container">
-      <div style="overflow-x: auto;">
-        <table id="historyTable"></table>
-      </div>
     </div>
   </div>
 
@@ -377,8 +419,8 @@
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px; margin-bottom:12px">
-      <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="PrinterService.printShortReceipt()">🖨️ Print Pesanan</button>
-      <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="PrinterService.printReceipt()">🔵 Print Struk Full</button>
+      <button class="btn secondary" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-size: 13px;" onclick="PrinterService.printShortReceipt()">🖨️ Makan Sini</button>
+      <button class="btn secondary" style="background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe; font-size: 13px;" onclick="PrinterService.printReceipt()">🔵 Struk Nota</button>
     </div>
     <button class="btn" style="background: var(--green); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="processTransaction()">✅ Selesai / Simpan</button>
     
@@ -404,15 +446,20 @@
   </div>
 </div>
 
-<!-- MODAL DAFTAR PRE-ORDER AKTIF -->
-<div id="activePoModal" class="modal-overlay">
-  <div class="modal-card" style="max-width: 500px; background: #f1f5f9; padding: 20px;">
-    <h3 style="margin:0 0 16px; font-size:20px; color:#1e293b; display:flex; justify-content:space-between; align-items:center;">
-        Daftar Pre-Order Aktif
-        <button onclick="closeModal('activePoModal')" style="background:none; border:none; font-size:24px; cursor:pointer; color:#64748b;">&times;</button>
-    </h3>
-    <div id="activePoList" style="max-height: 65vh; overflow-y: auto; display:flex; flex-direction:column; gap:16px;">
+<!-- HALAMAN FULL SCREEN DAFTAR PRE-ORDER AKTIF -->
+<div id="activePoPage" class="slide-up" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; overflow-y: auto; padding: 0;">
+  <div class="report-header">
+    <button class="report-back-btn" onclick="closeActivePOPage()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div>
+      <h2 style="color: #1e293b; margin:0; font-size: 20px;">Daftar Pre-Order Aktif</h2>
+      <div style="font-size:13px;color:var(--muted)">Pesanan yang belum diambil</div>
     </div>
+  </div>
+  
+  <div class="report-container" style="max-width: 600px;">
+    <div id="activePoList" style="display:flex; flex-direction:column; gap:16px;"></div>
   </div>
 </div>
 
@@ -431,6 +478,33 @@
   <div class="report-container">
     <div id="reportContent" style="background:white; border-radius:16px; overflow: hidden; box-shadow:0 1px 3px rgba(0,0,0,0.05); border:1px solid #e2e8f0;"></div>
     <button class="btn secondary" style="margin-top:24px" onclick="closeReport()">Kembali ke Kasir</button>
+  </div>
+</div>
+
+<!-- HALAMAN FULL SCREEN RIWAYAT TRANSAKSI -->
+<div id="historyPage" class="slide-up" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; overflow-y: auto; padding: 0;">
+  <div class="report-header">
+    <button class="report-back-btn" onclick="closeHistoryPage()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="color: #1e293b; margin:0; font-size: 20px;">Riwayat Transaksi</h2>
+        <div style="font-size:13px;color:var(--muted)">Daftar transaksi selesai</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="resetHistory()" style="font-size:12px;padding:8px 12px;border-radius:8px;border:none;background:#fee2e2;color:#991b1b;cursor:pointer;font-weight:600; transition:0.2s;">Reset</button>
+        <button onclick="exportExcel()" style="font-size:12px;padding:8px 12px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;cursor:pointer;font-weight:600; color: #334155; transition:0.2s;">Export Excel</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="report-container" style="max-width: 1000px;">
+    <div class="table-container">
+      <div style="overflow-x: auto;">
+        <table id="historyTable"></table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -497,18 +571,85 @@ const EscPosHelper = {
 /* ================= PRINTER SERVICE (BLUETOOTH) ================= */
 const PrinterService = {
     isConnected: false, macAddress: null, isCordovaReady: false, LOGO_URL: 'logoku.jpg',
+    monitorInterval: null, // BARU: Untuk memantau jika printer tiba-tiba mati
     ESC: { RESET: '\x1B\x40', ALIGN_LEFT: '\x1B\x61\x00', ALIGN_CENTER: '\x1B\x61\x01', ALIGN_RIGHT: '\x1B\x61\x02', BOLD_ON: '\x1B\x45\x01', BOLD_OFF: '\x1B\x45\x00', FONT_NORMAL: '\x1B\x21\x00', FONT_SMALL: '\x1B\x21\x01', FEED: '\x0A' },
-    init: function() { document.addEventListener('deviceready', () => { this.isCordovaReady = true; }, false); },
+    init: function() { 
+        document.addEventListener('deviceready', () => { 
+            this.isCordovaReady = true; 
+            this.autoConnect(); // BARU: Coba konek diam-diam saat app pertama dibuka
+        }, false); 
+    },
+    autoConnect: function() {
+        const savedMac = localStorage.getItem('printer_mac_caksabar');
+        if (savedMac && window.bluetoothSerial) {
+            window.bluetoothSerial.isEnabled(
+                () => {
+                    window.bluetoothSerial.connect(savedMac,
+                        () => { this.onConnected(savedMac, true); }, // Konek tanpa memunculkan alert berisik
+                        () => { /* Biarkan, berarti printer sedang mati */ }
+                    );
+                },
+                () => {}
+            );
+        }
+        this.startConnectionMonitor(); // Jalankan CCTV pemantau koneksi
+    },
+    startConnectionMonitor: function() {
+        if (this.monitorInterval) clearInterval(this.monitorInterval);
+        this.monitorInterval = setInterval(() => {
+            if (!this.isCordovaReady || !window.bluetoothSerial) return;
+            window.bluetoothSerial.isConnected(
+                () => {
+                    if (!this.isConnected) {
+                        this.isConnected = true;
+                        const btn = document.getElementById('btnConnect');
+                        if(btn) { btn.classList.remove('disconnected'); btn.classList.add('connected'); }
+                    }
+                },
+                () => {
+                    if (this.isConnected) {
+                        this.isConnected = false;
+                        const btn = document.getElementById('btnConnect');
+                        if(btn) { btn.classList.remove('connected'); btn.classList.add('disconnected'); } // Langsung merah jika printer tiba-tiba mati!
+                    }
+                }
+            );
+        }, 3000); // Cek status printer setiap 3 detik
+    },
     connect: function() {
         if (this.isConnected) { if(confirm('Putuskan koneksi printer?')) this.disconnect(); return; }
         if (!this.isCordovaReady) { alert("Plugin Bluetooth belum siap."); return; }
+        
+        const savedMac = localStorage.getItem('printer_mac_caksabar');
+
         window.bluetoothSerial.isEnabled(
-            () => { this.scanPaired(); },
-            () => { window.bluetoothSerial.enable(() => this.scanPaired(), () => alert("Gagal mengaktifkan Bluetooth.")); }
+            () => { 
+                if (savedMac) {
+                    // Jika pernah konek sebelumnya, langsung bypass scan dan coba nyambung ke printer tsb!
+                    document.getElementById('btModal').style.display = 'flex'; 
+                    document.getElementById('btLoading').style.display = 'block'; 
+                    document.getElementById('btLoading').innerText = "Otomatis memanggil printer sebelumnya..."; 
+                    document.getElementById('btDeviceList').innerHTML = `<button class="btn secondary" style="width:100%; margin-bottom:12px;" onclick="PrinterService.scanPaired()">🔄 Cari / Pilih Printer Lain</button>`;
+                    
+                    window.bluetoothSerial.connect(savedMac,
+                        () => {
+                            document.getElementById('btModal').style.display = 'none';
+                            this.onConnected(savedMac);
+                        },
+                        (err) => {
+                            // Jika printer lamanya gagal dipanggil (mungkin diganti/mati), langsung otomatis buka menu scan biasa
+                            this.scanPaired();
+                        }
+                    );
+                } else {
+                    this.scanPaired(); 
+                }
+            },
+            () => { window.bluetoothSerial.enable(() => this.connect(), () => alert("Gagal mengaktifkan Bluetooth.")); }
         );
     },
     scanPaired: function() {
-        document.getElementById('btModal').style.display = 'flex'; document.getElementById('btLoading').style.display = 'block'; document.getElementById('btDeviceList').innerHTML = '';
+        document.getElementById('btModal').style.display = 'flex'; document.getElementById('btLoading').style.display = 'block'; document.getElementById('btLoading').innerText = "Sedang memindai perangkat..."; document.getElementById('btDeviceList').innerHTML = '';
         window.bluetoothSerial.list((devices) => { this.showDeviceList(devices); document.getElementById('btLoading').style.display = 'none'; }, (err) => { document.getElementById('btLoading').style.display = 'none'; alert("Gagal: " + err); });
     },
     scanUnpaired: function() {
@@ -531,18 +672,27 @@ const PrinterService = {
         document.getElementById('btModal').style.display = 'none';
         window.bluetoothSerial.connect(address, () => { this.onConnected(address); }, (err) => { alert("Gagal koneksi: " + err); });
     },
-    onConnected: function(addr) {
+    onConnected: function(addr, isSilent = false) {
         this.isConnected = true; this.macAddress = addr;
-        const btn = document.getElementById('btnConnect'); btn.classList.remove('disconnected'); btn.classList.add('connected');
-        alert("Printer Terhubung!");
+        localStorage.setItem('printer_mac_caksabar', addr); // INGAT (SAVE) MAC PRINTER INI KE MEMORI
+        const btn = document.getElementById('btnConnect');
+        if(btn) { btn.classList.remove('disconnected'); btn.classList.add('connected'); }
+        if (!isSilent) alert("Printer Terhubung!");
     },
-    disconnect: function() { window.bluetoothSerial.disconnect(() => this.onDisconnected(), () => this.onDisconnected()); },
+    disconnect: function() { 
+        window.bluetoothSerial.disconnect(() => {
+            localStorage.removeItem('printer_mac_caksabar'); // LUPAKAN printer jika sengaja diputus manual oleh kasir
+            this.onDisconnected();
+        }, () => this.onDisconnected()); 
+    },
     onDisconnected: function() {
         this.isConnected = false;
-        const btn = document.getElementById('btnConnect'); btn.classList.remove('connected'); btn.classList.add('disconnected');
+        const btn = document.getElementById('btnConnect');
+        if(btn) { btn.classList.remove('connected'); btn.classList.add('disconnected'); }
     },
     printReceipt: function() {
-        if (!this.isConnected) { alert("Harap koneksikan printer bluetooth."); return; }
+        if (!this.isConnected) { alert("Gagal print: Harap koneksikan printer bluetooth."); return; }
+        if (!validateCheckout()) return;
         const tableNum = document.getElementById('tableNum').value || '-';
         const note = document.getElementById('orderNote').value || '-';
         const isPO = document.getElementById('isPO').checked;
@@ -573,6 +723,12 @@ const PrinterService = {
 
         cmds += "--------------------------------" + this.ESC.FEED + this.ESC.BOLD_ON + pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED + this.ESC.BOLD_OFF + pair("Bayar", "Rp " + rp(paid)) + this.ESC.FEED + pair("Kembali", "Rp " + rp(change < 0 ? 0 : change)) + this.ESC.FEED + this.ESC.FEED + this.ESC.ALIGN_CENTER + "Terima Kasih" + this.ESC.FEED + "Simpan struk ini sbg bukti" + this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
 
+        const onSuccess = () => {
+            alert("Print berhasil!");
+            processTransaction(true); // Otomatis simpan transaksi
+        };
+        const onError = (err) => alert("Gagal print: " + err);
+
         const img = new Image(); img.src = this.LOGO_URL;
         img.onload = () => {
             try {
@@ -582,13 +738,14 @@ const PrinterService = {
                 const centerCmd = new Uint8Array([0x1B, 0x61, 0x01]);
                 const combined = new Uint8Array(centerCmd.length + imgHexBuffer.length + textBuffer.length);
                 combined.set(centerCmd, 0); combined.set(imgHexBuffer, centerCmd.length); combined.set(textBuffer, centerCmd.length + imgHexBuffer.length);
-                window.bluetoothSerial.write(combined.buffer, () => {}, (err) => alert("Gagal Print: " + err));
-            } catch (e) { window.bluetoothSerial.write(cmds, null, null); }
+                window.bluetoothSerial.write(combined.buffer, onSuccess, onError);
+            } catch (e) { window.bluetoothSerial.write(cmds, onSuccess, onError); }
         };
-        img.onerror = () => { window.bluetoothSerial.write(this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED + cmds, () => {}, (err) => {}); };
+        img.onerror = () => { window.bluetoothSerial.write(this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_ON + "WARUNG CAKSABAR" + this.ESC.FEED + cmds, onSuccess, onError); };
     },
     printShortReceipt: function() {
-        if (!this.isConnected) { alert("Harap koneksikan printer bluetooth."); return; }
+        if (!this.isConnected) { alert("Gagal print: Harap koneksikan printer bluetooth."); return; }
+        if (!validateCheckout()) return;
         const tableNum = document.getElementById('tableNum').value || '-';
         const note = document.getElementById('orderNote').value || '-';
         const isPO = document.getElementById('isPO').checked;
@@ -614,7 +771,14 @@ const PrinterService = {
         });
 
         cmds += "--------------------------------" + this.ESC.FEED + this.ESC.BOLD_ON + pair("TOTAL", "Rp " + rp(total)) + this.ESC.FEED + this.ESC.BOLD_OFF + this.ESC.FEED + this.ESC.FEED + this.ESC.FEED;
-        window.bluetoothSerial.write(cmds, () => {}, (err) => alert("Gagal print pesanan: " + err));
+        
+        const onSuccess = () => {
+            alert("Print berhasil!");
+            processTransaction(true); // Otomatis simpan transaksi
+        };
+        const onError = (err) => alert("Gagal print: " + err);
+
+        window.bluetoothSerial.write(cmds, onSuccess, onError);
     }
 };
 
@@ -724,44 +888,95 @@ function resetCart() {
 }
 
 /* ================= ALARM & NOTIFIKASI NATIVE (HEADS-UP) ================= */
+// KODE BARU: Pelacak status layar native Cordova
+let isAppForeground = true;
+
+function toggleMainMenu() {
+    document.getElementById('mainMenu').classList.toggle('show');
+}
+
+// Tutup menu otomatis jika klik di luar kotak menu
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('mainMenu');
+    const btn = event.target.closest('.header-btn');
+    if (menu && menu.classList.contains('show') && !btn && !event.target.closest('#mainMenu')) {
+        menu.classList.remove('show');
+    }
+});
+
 function togglePO() {
     const isPO = document.getElementById('isPO').checked;
     document.getElementById('poInputs').style.display = isPO ? 'flex' : 'none';
-    if(isPO) document.getElementById('poName').focus();
+    if(isPO) document.getElementById('poTime').focus();
 }
 
 function initPOAlarmChecker() {
+    // Event listener asli Cordova (Sangat akurat)
+    document.addEventListener('pause', () => { isAppForeground = false; }, false);
+    document.addEventListener('resume', () => { isAppForeground = true; }, false);
+
+    // SISTEM PENDETEKSI INTERNAL: Mencegah notifikasi status bar jika aplikasi sedang dibuka
+    setInterval(() => {
+        if (!isAppForeground) return; // Hanya jalan jika aplikasi sedang terbuka di layar
+        
+        const now = Date.now();
+        let needsUpdate = false;
+        
+        transactions.forEach(trx => {
+            if (trx.isPO && trx.poStatus !== 'completed') {
+                // Deteksi Alarm Persiapan (1 detik lebih awal dari native)
+                if (trx.prepTime && !trx.notifiedPrep && now >= (trx.prepTime - 1000)) {
+                    trx.notifiedPrep = true; needsUpdate = true;
+                    // BATALKAN NOTIF NATIVE AGAR TIDAK MUNCUL DI STATUS BAR
+                    if (window.cordova && cordova.plugins.notification.local) {
+                        cordova.plugins.notification.local.cancel(trx.safeId);
+                    }
+                    triggerPOAlarmScreen(trx, "Siapkan Pre-Order!");
+                }
+                
+                // Deteksi Alarm Pengambilan (1 detik lebih awal dari native)
+                if (trx.pickupTime && !trx.notifiedPickup && now >= (trx.pickupTime - 1000)) {
+                    trx.notifiedPickup = true; needsUpdate = true;
+                    // BATALKAN NOTIF NATIVE AGAR TIDAK MUNCUL DI STATUS BAR
+                    if (window.cordova && cordova.plugins.notification.local) {
+                        cordova.plugins.notification.local.cancel(trx.safeId + 1);
+                    }
+                    triggerPOAlarmScreen(trx, "Ambil Pre-Order!");
+                }
+            }
+        });
+        
+        if (needsUpdate) {
+            localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+        }
+    }, 1000);
+
     document.addEventListener('deviceready', () => {
         if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
             
             cordova.plugins.notification.local.requestPermission(function (granted) {});
 
-            // Menangani kejadian saat Notifikasi / Tombol diklik
-            const handleNotifClick = function (notification) {
+            // Menangani kejadian saat Notifikasi di status bar diklik (Saat dari Background)
+            cordova.plugins.notification.local.on('click', function (notification) {
                 const trxId = notification.data ? notification.data.trxId : null;
                 if (trxId) {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
-                        // Notifikasi ini akan otomatis membuka aplikasi (launch: true).
-                        // Setelah aplikasi terbuka, tampilkan layar detail PO-nya.
                         triggerPOAlarmScreen(trx, notification.title);
+                        cordova.plugins.notification.local.clear(notification.id);
                     }
                 }
-            };
-
-            cordova.plugins.notification.local.on('click', handleNotifClick);
-
-            // Handler untuk trigger (saat waktu alarm tiba)
+            });
+            
+            // Jaga-jaga jika Interval JS terlewat dan trigger native jalan di background
             cordova.plugins.notification.local.on('trigger', function (notification) {
                 const trxId = notification.data ? notification.data.trxId : null;
                 if (trxId) {
                     const trx = transactions.find(t => t.id == trxId);
                     if (trx && trx.poStatus !== 'completed') {
-                        // Jika aplikasi sedang terbuka dan aktif di layar pengguna, langsung munculkan popup UI
-                        if (document.visibilityState === 'visible') {
-                            triggerPOAlarmScreen(trx, notification.title);
-                        }
-                        // Jika aplikasi di background, biarkan notifikasi native Heads-Up yang bekerja di atas layar.
+                        if (notification.id === trx.safeId) { trx.notifiedPrep = true; }
+                        if (notification.id === (trx.safeId + 1)) { trx.notifiedPickup = true; }
+                        localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
                     }
                 }
             });
@@ -809,7 +1024,7 @@ function actionAlarmProses() {
             trx.poStatus = 'processing';
             localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
             updateActivePOCount();
-            showActivePOModal();
+            showActivePOPage();
         }
     }
 }
@@ -832,15 +1047,24 @@ function actionAlarmSiap() {
 /* ================= HALAMAN DAFTAR PRE-ORDER AKTIF ================= */
 function updateActivePOCount() {
     const activePOs = transactions.filter(t => t.isPO && t.poStatus !== 'completed');
-    const badge = document.getElementById('poActiveCount');
-    if (activePOs.length > 0) { badge.textContent = activePOs.length; badge.style.display = 'flex'; } else { badge.style.display = 'none'; }
+    const badgeDropdown = document.getElementById('poActiveCountDropdown');
+    const badgeMenuBtn = document.getElementById('mainMenuBadge');
+    
+    if (activePOs.length > 0) { 
+        if(badgeDropdown) { badgeDropdown.textContent = activePOs.length; badgeDropdown.style.display = 'inline-block'; }
+        if(badgeMenuBtn) { badgeMenuBtn.textContent = activePOs.length; badgeMenuBtn.style.display = 'flex'; }
+    } else { 
+        if(badgeDropdown) badgeDropdown.style.display = 'none'; 
+        if(badgeMenuBtn) badgeMenuBtn.style.display = 'none'; 
+    }
 }
 
-function showActivePOModal() {
+function showActivePOPage() {
+    const menu = document.getElementById('mainMenu'); if(menu) menu.classList.remove('show');
     const container = document.getElementById('activePoList'); container.innerHTML = '';
     const activePOs = transactions.filter(t => t.isPO && t.poStatus !== 'completed').sort((a,b) => a.poTime.localeCompare(b.poTime));
 
-    if (activePOs.length === 0) { container.innerHTML = '<div style="text-align:center; padding: 40px; color:#64748b;">Belum ada Pre-Order yang aktif.</div>'; } 
+    if (activePOs.length === 0) { container.innerHTML = '<div style="text-align:center; padding: 40px; color:#64748b; background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">Belum ada Pre-Order yang aktif.</div>'; } 
     else {
         activePOs.forEach(trx => {
             let itemsHtml = '';
@@ -851,10 +1075,16 @@ function showActivePOModal() {
             if (trx.poStatus === 'pending') { btnAction = `<button class="btn" style="background:var(--orange); padding:10px; font-size:14px;" onclick="changePOStatus(${trx.id}, 'processing')">⏳ Proses Pesanan</button>`; } 
             else if (trx.poStatus === 'processing') { btnAction = `<button class="btn" style="background:var(--green); padding:10px; font-size:14px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);" onclick="changePOStatus(${trx.id}, 'completed')">✅ Tandai Sudah Siap</button>`; }
 
-            container.innerHTML += `<div class="active-po-card"><div class="po-header-bar"><div style="font-size:16px; font-weight:800; color:#0f172a;">${trx.poName}</div><div style="font-size:18px; font-weight:800; color:var(--accent); background:#e0f2fe; padding:4px 12px; border-radius:8px;">${trx.poTime}</div></div><div style="margin-bottom:12px;">${itemsHtml}</div>${trx.note && trx.note !== '-' ? `<div style="font-size:12px; color:#d97706; margin-bottom:8px;">Catatan: ${trx.note}</div>` : ''}<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"><span style="font-size:12px; font-weight:bold;">Status Bayar:</span><span style="font-size:13px; font-weight:bold;">${statusBayar}</span></div>${btnAction}</div>`;
+            container.innerHTML += `<div class="active-po-card" style="margin-bottom:0;"><div class="po-header-bar"><div style="font-size:16px; font-weight:800; color:#0f172a;">${trx.poName}</div><div style="font-size:18px; font-weight:800; color:var(--accent); background:#e0f2fe; padding:4px 12px; border-radius:8px;">${trx.poTime}</div></div><div style="margin-bottom:12px;">${itemsHtml}</div>${trx.note && trx.note !== '-' ? `<div style="font-size:12px; color:#d97706; margin-bottom:8px;">Catatan: ${trx.note}</div>` : ''}<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;"><span style="font-size:12px; font-weight:bold;">Status Bayar:</span><span style="font-size:13px; font-weight:bold;">${statusBayar}</span></div>${btnAction}</div>`;
         });
     }
-    document.getElementById('activePoModal').style.display = 'flex';
+    document.getElementById('activePoPage').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeActivePOPage() {
+    document.getElementById('activePoPage').style.display = 'none';
+    document.body.style.overflow = '';
 }
 
 function changePOStatus(trxId, newStatus) {
@@ -862,7 +1092,7 @@ function changePOStatus(trxId, newStatus) {
     if (trx) {
         trx.poStatus = newStatus; localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions)); updateActivePOCount();
         if (newStatus === 'completed') { alert('Pesanan selesai dan masuk ke Riwayat Transaksi.'); renderHistory(); }
-        showActivePOModal();
+        showActivePOPage();
     }
 }
 
@@ -880,7 +1110,30 @@ function showCheckout() {
 function addNol(val) { const input = document.getElementById('paidInput'); input.value = input.value + val; input.dispatchEvent(new Event('input')); input.focus(); }
 function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
-function processTransaction() {
+function validateCheckout() {
+  const isPO = document.getElementById('isPO').checked;
+  const poName = document.getElementById('poName').value;
+  const poTime = document.getElementById('poTime').value;
+
+  if (isPO) {
+      if (!poName.trim()) { alert('Nama pemesan Pre-Order wajib diisi!'); return false; }
+      if (!poTime) { alert('Jam pengambilan Pre-Order wajib diisi!'); return false; }
+  }
+
+  const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+  const paid = parseInt(document.getElementById('paidInput').value) || 0;
+  
+  if (paid < total && paid !== 0) { 
+      if(!confirm('Uang kurang! Tetap lanjutkan sebagai utang/kurang bayar?')) return false; 
+  }
+  return true;
+}
+
+function processTransaction(skipValidationAndAlert = false) {
+  if (!skipValidationAndAlert) {
+      if (!validateCheckout()) return;
+  }
+
   const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
   const paid = parseInt(document.getElementById('paidInput').value) || 0;
   const tableNum = document.getElementById('tableNum').value || '-';
@@ -890,22 +1143,12 @@ function processTransaction() {
   const poName = document.getElementById('poName').value;
   const poTime = document.getElementById('poTime').value;
 
+  let prepTimeVal = null;
+  let pickupTimeVal = null;
+  // Membuat ID Notifikasi yang AMAN (TIdak Overflow di sistem Android Java)
+  const safeId = Math.floor(Math.random() * 100000000);
+
   if (isPO) {
-      if (!poName.trim()) return alert('Nama pemesan Pre-Order wajib diisi!');
-      if (!poTime) return alert('Jam pengambilan Pre-Order wajib diisi!');
-  }
-
-  if (paid < total && paid !== 0) { if(!confirm('Uang kurang! Tetap lanjutkan sebagai utang/kurang bayar?')) return; }
-
-  const trx = {
-    id: Date.now(), date: new Date().toLocaleString('id-ID'), tableNum: tableNum, note: note, items: [...cart], total: total, paid: paid, isPO: isPO, poName: poName, poTime: poTime, poStatus: isPO ? 'pending' : null, notified: false
-  };
-
-  transactions.unshift(trx);
-  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
-  
-  // JADWALKAN ALARM PRE-ORDER (Sistem Heads-Up Android Murni)
-  if (isPO && window.cordova && cordova.plugins && cordova.plugins.notification) {
       const now = new Date();
       const [poH, poM] = poTime.split(':').map(Number);
       
@@ -915,18 +1158,46 @@ function processTransaction() {
       let prepDate = new Date(pickupDate.getTime() - (15 * 60000));
       if (prepDate.getTime() < now.getTime()) prepDate = new Date(now.getTime() + 5000); 
 
+      prepTimeVal = prepDate.getTime();
+      pickupTimeVal = pickupDate.getTime();
+  }
+
+  const trx = {
+    id: Date.now(), 
+    safeId: safeId,
+    date: new Date().toLocaleString('id-ID'), 
+    tableNum: tableNum, 
+    note: note, 
+    items: [...cart], 
+    total: total, 
+    paid: paid, 
+    isPO: isPO, 
+    poName: poName, 
+    poTime: poTime, 
+    poStatus: isPO ? 'pending' : null, 
+    notifiedPrep: false,
+    notifiedPickup: false,
+    prepTime: prepTimeVal,
+    pickupTime: pickupTimeVal
+  };
+
+  transactions.unshift(trx);
+  localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions));
+  
+  // JADWALKAN ALARM PRE-ORDER (Sistem Heads-Up Android Murni)
+  if (isPO && window.cordova && cordova.plugins && cordova.plugins.notification) {
       // 1. Alarm 15 Menit Sebelum
       cordova.plugins.notification.local.schedule({
-          id: trx.id, 
+          id: safeId, 
           title: "Siapkan Pre-Order!",
           text: `Pesanan a/n ${poName} untuk jam ${poTime}`,
-          trigger: { at: prepDate },
-          foreground: true,
+          trigger: { at: new Date(prepTimeVal) },
+          foreground: false,
           vibrate: true,
           wakeup: true, // Membangunkan layar (jika mati)
           priority: 2, // 2 adalah IMPORTANCE_MAX -> Memicu popup melayang (Heads-up)
           category: 'call', // Kategori khusus untuk memaksa popup prioritas tinggi
-          channel: 'po_alarm_urgent',
+          channel: 'po_channel_v3', 
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }
@@ -934,16 +1205,16 @@ function processTransaction() {
       
       // 2. Alarm Tepat Jam Pengambilan
       cordova.plugins.notification.local.schedule({
-          id: trx.id + 1,
+          id: safeId + 1,
           title: "Ambil Pre-Order!",
           text: `Pesanan a/n ${poName} (${poTime}) sudah diambil?`,
-          trigger: { at: pickupDate },
-          foreground: true,
+          trigger: { at: new Date(pickupTimeVal) },
+          foreground: false,
           vibrate: true,
           wakeup: true,
           priority: 2, 
           category: 'call',
-          channel: 'po_alarm_urgent',
+          channel: 'po_channel_v3', 
           sound: 'file://audionotif.mp3',
           launch: true, // Jika popup ditekan, akan memaksa buka aplikasi
           data: { trxId: trx.id }
@@ -951,7 +1222,10 @@ function processTransaction() {
   }
   
   resetCart(); closeModal('paymentModal'); updateStats(); renderHistory(); updateActivePOCount();
-  alert(isPO ? 'Pre-Order Tersimpan. Alarm telah dijadwalkan!' : 'Transaksi Berhasil!');
+  
+  if (!skipValidationAndAlert) {
+      alert(isPO ? 'Pre-Order Tersimpan. Alarm telah dijadwalkan!' : 'Transaksi Berhasil!');
+  }
 }
 
 let currentCustomItemId = null;
@@ -978,10 +1252,12 @@ function parseAI() {
 
 /* ================= REPORT & HISTORY ================= */
 function showReport() {
+  const menu = document.getElementById('mainMenu'); if(menu) menu.classList.remove('show');
   const salesStats = {}; 
   transactions.forEach(t => { t.items.forEach(item => { const key = `${item.id}_${item.price}`; if (!salesStats[key]) { const menuRef = DATA_MENU.find(m => m.id === item.id); salesStats[key] = { id: item.id, label: item.label, price: item.price, qty: 0, category: menuRef ? menuRef.category : 'food', isCustom: menuRef ? (menuRef.price !== item.price) : false }; } salesStats[key].qty += item.qty; }); });
   const soldItems = Object.values(salesStats).sort((a, b) => b.qty - a.qty); const foods = soldItems.filter(i => i.category === 'food'); const drinks = soldItems.filter(i => i.category === 'drink');
   let foodHtml = ''; let drinkHtml = ''; let totalFood = 0; let totalDrink = 0;
+  
   const renderRow = (item) => { let priceDisplay = `<span style="color:#64748b;font-size:12px">@ ${formatRp(item.price)}</span>`; if (item.isCustom) priceDisplay = `<span style="color:#ef4444;font-size:12px;background:#fee2e2;padding:2px 8px;border-radius:6px;font-weight:600">Khusus: ${formatRp(item.price)}</span>`; let qtyDisplay = item.qty; if (['sk_porsi', 'sk_nl_porsi', 'sa_porsi'].includes(item.id)) qtyDisplay = `${item.qty} Porsi <span style="font-weight:800;color:var(--accent);font-size:12px;display:block">(${item.qty * 10} Tusuk)</span>`; else if (['sk_tusuk', 'sk_nl_tusuk', 'sa_tusuk'].includes(item.id)) qtyDisplay = `${item.qty} Tusuk`; return `<tr class="report-row"><td><div style="font-weight:600;color:#0f172a; margin-bottom:2px;">${item.label}</div><div>${priceDisplay}</div></td><td style="text-align:right;vertical-align:middle" class="report-qty">${qtyDisplay}</td></tr>`; };
   if (foods.length > 0) { foodHtml += '<tr><td colspan="2" class="report-group-header">Makanan & Nasi</td></tr>'; foods.forEach(i => { foodHtml += renderRow(i); totalFood += i.qty; }); }
   if (drinks.length > 0) { drinkHtml += '<tr><td colspan="2" class="report-group-header" style="border-top:1px solid #e2e8f0;">Minuman</td></tr>'; drinks.forEach(i => { drinkHtml += renderRow(i); totalDrink += i.qty; }); }
@@ -991,6 +1267,17 @@ function showReport() {
   document.getElementById('reportPage').style.display = 'flex'; document.body.style.overflow = 'hidden'; 
 }
 function closeReport() { document.getElementById('reportPage').style.display = 'none'; document.body.style.overflow = ''; }
+
+function showHistoryPage() {
+  const menu = document.getElementById('mainMenu'); if(menu) menu.classList.remove('show');
+  document.getElementById('historyPage').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  renderHistory();
+}
+function closeHistoryPage() {
+  document.getElementById('historyPage').style.display = 'none';
+  document.body.style.overflow = '';
+}
 
 function updateStats() {
   const today = new Date().toLocaleDateString('id-ID'); const todaysTrx = transactions.filter(t => t.date.includes(today)); const omset = todaysTrx.reduce((a, b) => a + b.total, 0); const completedTrx = todaysTrx.filter(t => !t.isPO || t.poStatus === 'completed');
@@ -1013,7 +1300,7 @@ function editTransaction(id) {
   const trxIndex = transactions.findIndex(t => t.id === id); if (trxIndex === -1) return; const trx = transactions[trxIndex];
   if(!confirm('Edit transaksi ini? Item akan kembali ke keranjang dan transaksi akan dihapus dari riwayat.')) return;
   cart = [...trx.items]; document.getElementById('tableNum').value = (trx.tableNum && trx.tableNum !== '-') ? trx.tableNum : ''; document.getElementById('orderNote').value = (trx.note && trx.note !== '-') ? trx.note : '';
-  transactions.splice(trxIndex, 1); localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions)); renderCart(); updateStats(); renderHistory(); updateActivePOCount(); window.scrollTo({top: 0, behavior: 'smooth'});
+  transactions.splice(trxIndex, 1); localStorage.setItem('trx_cak_sabar', JSON.stringify(transactions)); renderCart(); updateStats(); renderHistory(); updateActivePOCount(); closeHistoryPage(); window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
 function deleteTransaction(id) {

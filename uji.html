@@ -725,7 +725,13 @@ const PrinterService = {
         let cmds = this.ESC.RESET + this.ESC.ALIGN_CENTER + this.ESC.BOLD_OFF + "Jl. Brigjen Katamso No.88-81" + this.ESC.FEED + "Telp/WA: 0852 3141 3408" + this.ESC.FEED + this.ESC.FEED;
         cmds += this.ESC.ALIGN_LEFT + `${dateNow}` + this.ESC.FEED + this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
 
-        if (isPO) { cmds += this.ESC.BOLD_ON + `[PRE-ORDER]` + this.ESC.BOLD_OFF + this.ESC.FEED + `PEMESAN: ${poName}` + this.ESC.FEED + `DIAMBIL: ${poTime}` + this.ESC.FEED; }
+        // KODE BARU: Menampilkan nama meski BUKAN Pre-Order
+        if (isPO) { 
+            cmds += this.ESC.BOLD_ON + `[PRE-ORDER]` + this.ESC.BOLD_OFF + this.ESC.FEED + `PEMESAN: ${poName}` + this.ESC.FEED + `DIAMBIL: ${poTime}` + this.ESC.FEED; 
+        } else if (poName && poName !== '-' && poName.trim() !== '') { 
+            cmds += `PEMESAN: ${poName}` + this.ESC.FEED; 
+        }
+
         if(note !== '-') { cmds += `Catatan: ${note}` + this.ESC.FEED; }
         cmds += "--------------------------------" + this.ESC.FEED + this.ESC.FONT_NORMAL + "ITEM             JML     TOTAL" + this.ESC.FEED + "--------------------------------" + this.ESC.FEED;
         
@@ -774,7 +780,14 @@ const PrinterService = {
         const pair = (left, right, width = 32) => left + " ".repeat(Math.max(0, width - left.length - right.length)) + right;
 
         let cmds = this.ESC.RESET + this.ESC.ALIGN_LEFT + `${dateNow}` + this.ESC.FEED + this.ESC.BOLD_ON + `MEJA: ${tableNum}` + this.ESC.BOLD_OFF + this.ESC.FEED;
-        if (isPO) { cmds += this.ESC.BOLD_ON + `[PRE-ORDER]` + this.ESC.BOLD_OFF + this.ESC.FEED + `PEMESAN: ${poName}` + this.ESC.FEED + `DIAMBIL: ${poTime}` + this.ESC.FEED; }
+        
+        // KODE BARU: Menampilkan nama meski BUKAN Pre-Order di Struk Pendek (Makan Sini)
+        if (isPO) { 
+            cmds += this.ESC.BOLD_ON + `[PRE-ORDER]` + this.ESC.BOLD_OFF + this.ESC.FEED + `PEMESAN: ${poName}` + this.ESC.FEED + `DIAMBIL: ${poTime}` + this.ESC.FEED; 
+        } else if (poName && poName !== '-' && poName.trim() !== '') { 
+            cmds += `PEMESAN: ${poName}` + this.ESC.FEED; 
+        }
+
         if(note !== '-') { cmds += `Catatan: ${note}` + this.ESC.FEED; }
         cmds += "--------------------------------" + this.ESC.FEED + this.ESC.FONT_NORMAL + "ITEM             JML     TOTAL" + this.ESC.FEED + "--------------------------------" + this.ESC.FEED;
         
